@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Evaluation & LLM-as-a-Judge — An Annotated Reading Path</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --surface: #ffffff;
+    --ink: #1c1b19;
+    --ink-soft: #55524c;
+    --ink-faint: #8a867e;
+    --line: #e6e2d9;
+    --accent: #9a5b2e;
+    --accent-soft: #f4ece2;
+    --win: #2f6b3d;
+    --win-bg: #eaf3ec;
+    --dud: #a33223;
+    --dud-bg: #f8ebe8;
+    --mixed: #94711a;
+    --mixed-bg: #f6efdd;
+    --maxw: 760px;
+    --font: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --sans: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #171614;
+      --surface: #201f1c;
+      --ink: #ece9e3;
+      --ink-soft: #b3aea4;
+      --ink-faint: #837e74;
+      --line: #322f2a;
+      --accent: #d9905a;
+      --accent-soft: #2a231c;
+      --win: #7dc98e;
+      --win-bg: #1b2a1f;
+      --dud: #e08573;
+      --dud-bg: #2c1d1a;
+      --mixed: #d8b45c;
+      --mixed-bg: #2a2416;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 19px;
+    line-height: 1.66;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .layout { display: flex; gap: 3rem; max-width: 1180px; margin: 0 auto; padding: 0 2rem; }
+  main { max-width: var(--maxw); padding: 4rem 0 6rem; }
+
+  /* Sidebar TOC */
+  nav.toc {
+    position: sticky; top: 0; align-self: flex-start;
+    height: 100vh; overflow-y: auto;
+    padding: 4rem 0 2rem; width: 250px; flex-shrink: 0;
+    font-family: var(--sans); font-size: 13.5px; line-height: 1.5;
+  }
+  nav.toc .toc-title {
+    text-transform: uppercase; letter-spacing: .12em; font-size: 11px;
+    color: var(--ink-faint); font-weight: 600; margin-bottom: 1rem;
+  }
+  nav.toc a {
+    display: block; color: var(--ink-soft); text-decoration: none;
+    padding: 3px 0 3px 12px; border-left: 2px solid var(--line);
+    transition: color .15s, border-color .15s;
+  }
+  nav.toc a:hover { color: var(--accent); border-left-color: var(--accent); }
+  nav.toc a.sub { padding-left: 24px; font-size: 12.5px; color: var(--ink-faint); }
+
+  /* Header */
+  .eyebrow {
+    font-family: var(--sans); text-transform: uppercase; letter-spacing: .18em;
+    font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 1rem;
+  }
+  h1 { font-size: 2.5rem; line-height: 1.12; margin: 0 0 1rem; font-weight: 600; letter-spacing: -.01em; }
+  .lede { font-size: 1.12rem; color: var(--ink-soft); font-style: italic; margin: 0 0 2.5rem; }
+
+  h2 {
+    font-size: 1.7rem; font-weight: 600; letter-spacing: -.01em;
+    margin: 3.5rem 0 .4rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
+    scroll-margin-top: 1.5rem;
+  }
+  h2 .part { display: block; font-family: var(--sans); font-size: 12px; font-weight: 600;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: .3rem; }
+  h3 {
+    font-size: 1.22rem; font-weight: 600; margin: 2.2rem 0 .5rem; scroll-margin-top: 1.5rem;
+    line-height: 1.3;
+  }
+  h3 .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.7em; height: 1.7em; margin-right: .5em; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent);
+    font-family: var(--sans); font-size: .72em; font-weight: 700; vertical-align: middle;
+  }
+  p { margin: 0 0 1.1rem; }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  strong { font-weight: 600; }
+  em { font-style: italic; }
+  .meta-links { font-family: var(--sans); font-size: 14px; color: var(--ink-faint); margin: 0 0 1rem; }
+  .meta-links a { word-break: break-word; }
+
+  /* Callout */
+  .callout {
+    background: var(--accent-soft); border-left: 3px solid var(--accent);
+    padding: 1.1rem 1.4rem; border-radius: 0 6px 6px 0; margin: 1.6rem 0 2rem;
+    font-size: 1rem;
+  }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout.plain { background: var(--surface); border-left-color: var(--line); box-shadow: 0 1px 0 var(--line); }
+
+  /* Definition-style lines within entries */
+  .field { margin: 0 0 .7rem; }
+  .field .k { font-weight: 600; }
+
+  ul { margin: 0 0 1.2rem; padding-left: 1.3rem; }
+  li { margin: 0 0 .45rem; }
+
+  /* verdict tags */
+  .tag { display: inline-block; font-family: var(--sans); font-size: 11.5px; font-weight: 700;
+    letter-spacing: .04em; padding: 1px 8px; border-radius: 20px; vertical-align: middle;
+    text-transform: uppercase; }
+  .tag.win { background: var(--win-bg); color: var(--win); }
+  .tag.dud { background: var(--dud-bg); color: var(--dud); }
+  .tag.mixed { background: var(--mixed-bg); color: var(--mixed); }
+
+  /* Scoreboard table */
+  .table-wrap { overflow-x: auto; margin: 1.5rem 0 2rem; border: 1px solid var(--line); border-radius: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 15.5px; font-family: var(--sans); }
+  th, td { text-align: left; padding: .7rem .9rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--surface); font-size: 12px; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--ink-faint); font-weight: 700; }
+  tr:last-child td { border-bottom: none; }
+  td:nth-child(2) { white-space: nowrap; }
+
+  code { font-family: var(--mono); font-size: .85em; background: var(--accent-soft);
+    padding: 1px 5px; border-radius: 4px; }
+
+  hr { border: none; border-top: 1px solid var(--line); margin: 3rem 0; }
+  .footnote { font-family: var(--sans); font-size: 14px; color: var(--ink-faint); font-style: normal; }
+
+  /* ---------- Interactive demos ---------- */
+  .demo {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    padding: 1.3rem 1.4rem; margin: 1.8rem 0 2rem; font-family: var(--sans); font-size: 15.5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+  }
+  .demo-label {
+    display: inline-flex; align-items: center; gap: .5em; font-size: 11px; font-weight: 700;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: .9rem;
+  }
+  .demo-label::before {
+    content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+    animation: pulse 2.2s infinite;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(154,91,46,.5); }
+    70% { box-shadow: 0 0 0 8px rgba(154,91,46,0); }
+    100% { box-shadow: 0 0 0 0 rgba(154,91,46,0); }
+  }
+  .demo h4 { font-family: var(--font); font-size: 1.08rem; margin: 0 0 .7rem; font-weight: 600; }
+  .demo p { font-size: 14.5px; margin: 0 0 .8rem; color: var(--ink-soft); }
+  .btn {
+    font-family: var(--sans); font-size: 13.5px; font-weight: 600; color: #fff; background: var(--accent);
+    border: none; padding: .5em 1em; border-radius: 6px; cursor: pointer;
+    transition: filter .15s, transform .05s;
+  }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:active { transform: translateY(1px); }
+  .btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  .controls { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin: 1rem 0 .5rem; }
+  .demo-note { font-size: 12.5px; color: var(--ink-faint); font-style: italic; margin-top: .6rem; }
+
+  .sentence { font-family: var(--font); font-size: 1.08rem; line-height: 1.95; }
+  .tok { padding: 1px 3px; border-radius: 3px; transition: background .45s, color .45s; }
+  .tok.match { background: var(--dud-bg); color: var(--dud); font-weight: 600; }
+
+  .meter { height: 15px; background: var(--line); border-radius: 8px; overflow: hidden; margin-top: .25rem; }
+  .meter > span { display: block; height: 100%; width: 0; border-radius: 8px; background: var(--accent);
+    transition: width .9s cubic-bezier(.4,0,.2,1); }
+  .meter > span.good { background: var(--win); }
+  .meter > span.bad { background: var(--dud); }
+
+  .verdict { font-family: var(--font); font-size: 1.05rem; margin: .7rem 0 .2rem; padding: .6rem .9rem;
+    border-radius: 8px; background: var(--accent-soft); }
+
+  .pair { display: flex; gap: .8rem; margin: .5rem 0; }
+  .ans { flex: 1; border: 1px solid var(--line); border-radius: 8px; padding: .8rem;
+    text-align: center; transition: border-color .3s, background .3s, transform .3s; }
+  .ans .slot { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-faint); }
+  .ans .who { font-size: 1.35rem; font-family: var(--font); margin-top: .2rem; }
+  .ans.win { border-color: var(--win); background: var(--win-bg); transform: translateY(-3px); }
+
+  .barlabel { font-size: 12.5px; color: var(--ink-soft); margin: .7rem 0 0; display: flex;
+    justify-content: space-between; }
+  .barlabel .v { font-family: var(--mono); font-size: 12px; }
+
+  .track { position: relative; height: 72px; margin: 1.6rem 0 1.8rem; border-bottom: 2px solid var(--line); }
+  .track .tick { position: absolute; bottom: -22px; transform: translateX(-50%); font-size: 11px;
+    color: var(--ink-faint); font-family: var(--mono); }
+  .chip { position: absolute; transform: translateX(-50%); color: #fff; font-size: 11px; font-weight: 600;
+    padding: 3px 8px; border-radius: 12px; white-space: nowrap; left: 0; bottom: 6px;
+    transition: left 1.1s cubic-bezier(.4,0,.2,1), bottom .6s; }
+
+  .elo-row { display: flex; align-items: center; gap: .7rem; margin: .55rem 0; }
+  .elo-row .lbl { width: 74px; font-weight: 600; font-size: 13.5px; }
+  .elo-row .meter { flex: 1; margin-top: 0; }
+  .elo-row .num { width: 48px; text-align: right; font-family: var(--mono); font-size: 12.5px; color: var(--ink-soft); }
+
+  .jury-seats { display: flex; flex-wrap: wrap; gap: .7rem; margin: .8rem 0 .4rem; }
+  .seat { width: 70px; text-align: center; font-size: 11px; color: var(--ink-soft); animation: pop .3s ease; }
+  @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .seat .face { width: 42px; height: 42px; border-radius: 50%; margin: 0 auto .3rem; display: flex;
+    align-items: center; justify-content: center; font-size: 1.15rem; border: 2px solid var(--line);
+    background: var(--bg); }
+  .seat.biased .face { border-color: var(--dud); background: var(--dud-bg); }
+  .seat .vote { font-weight: 700; font-size: 12.5px; }
+  .seat.voteA .vote { color: var(--dud); }
+  .seat.voteB .vote { color: var(--win); }
+
+  input[type=range] { width: 100%; accent-color: var(--accent); margin: .3rem 0 .2rem; }
+
+  .crit { list-style: none; padding: 0; margin: .6rem 0 .3rem; }
+  .crit li { display: flex; align-items: center; gap: .6rem; padding: .4rem 0; cursor: pointer;
+    font-size: 14px; border-bottom: 1px solid var(--line); }
+  .crit .box { width: 20px; height: 20px; border-radius: 5px; border: 2px solid var(--line);
+    display: flex; align-items: center; justify-content: center; font-size: 13px; color: #fff;
+    flex-shrink: 0; transition: .2s; }
+  .crit li.on .box { background: var(--win); border-color: var(--win); }
+  .crit .pts { margin-left: auto; font-family: var(--mono); font-size: 12px; color: var(--ink-faint); }
+
+  .steps { margin: .5rem 0 0; }
+  .step { opacity: 0; transform: translateY(6px); transition: .45s; padding: .4rem 0; font-size: 14px;
+    border-bottom: 1px dashed var(--line); color: var(--ink-soft); }
+  .step.show { opacity: 1; transform: none; }
+  .step .k { font-weight: 600; color: var(--ink); }
+  .bigscore { font-family: var(--font); font-size: 2.2rem; font-weight: 600; margin: .4rem 0; }
+
+  .axis-row { display: flex; align-items: center; gap: .7rem; margin: .55rem 0; }
+  .axis-row .lbl { width: 96px; font-size: 13px; font-weight: 600; }
+  .axis-row .meter { flex: 1; margin-top: 0; height: 13px; }
+  .axis-row .num { width: 42px; text-align: right; font-family: var(--mono); font-size: 12px; color: var(--ink-soft); }
+  .axis-row.wins { background: var(--win-bg); border-radius: 6px; padding: .2rem .4rem; margin-left: -.4rem; }
+  .axis-row.wins .lbl { color: var(--win); }
+
+  .mini { display: flex; align-items: center; gap: .5rem; margin: .2rem 0; font-size: 12px; }
+  .mini .tag2 { width: 58px; color: var(--ink-faint); }
+  .mini .meter { flex: 1; height: 10px; margin-top: 0; }
+  .mini .num { width: 34px; text-align: right; font-family: var(--mono); }
+
+  .rb-case { display: flex; align-items: center; gap: .7rem; padding: .5rem 0; border-bottom: 1px solid var(--line);
+    font-size: 14px; }
+  .rb-case .mark { width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; display: flex;
+    align-items: center; justify-content: center; font-weight: 700; color: #fff; background: var(--line);
+    transition: background .3s; }
+  .rb-case.ok .mark { background: var(--win); }
+  .rb-case.no .mark { background: var(--dud); }
+
+  /* ---------- Concept drawer ---------- */
+  .cterm { border-bottom: 1.5px dotted var(--accent); cursor: help; }
+  .cterm:hover { background: var(--accent-soft); }
+
+  .concept-fab {
+    position: fixed; right: 20px; bottom: 20px; z-index: 40; background: var(--accent); color: #fff;
+    border: none; border-radius: 999px; padding: .75em 1.15em; font-family: var(--sans); font-weight: 600;
+    font-size: 14px; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,.2); transition: filter .15s, transform .05s;
+  }
+  .concept-fab:hover { filter: brightness(1.08); }
+  .concept-fab:active { transform: translateY(1px); }
+
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); opacity: 0; pointer-events: none;
+    transition: opacity .3s; z-index: 45; }
+  .overlay.show { opacity: 1; pointer-events: auto; }
+
+  .drawer {
+    position: fixed; top: 0; right: 0; height: 100vh; width: 410px; max-width: 92vw; background: var(--surface);
+    border-left: 1px solid var(--line); box-shadow: -8px 0 30px rgba(0,0,0,.16);
+    transform: translateX(100%); transition: transform .34s cubic-bezier(.4,0,.2,1);
+    z-index: 50; display: flex; flex-direction: column;
+  }
+  .drawer.show { transform: none; }
+  .drawer-head { padding: 1.1rem 1.4rem; border-bottom: 1px solid var(--line); display: flex;
+    align-items: center; justify-content: space-between; }
+  .drawer-head h3 { margin: 0; font-size: 1.15rem; font-weight: 600; }
+  .drawer-close { background: none; border: none; font-size: 1.6rem; cursor: pointer; color: var(--ink-faint);
+    line-height: 1; padding: 0 .2rem; }
+  .drawer-close:hover { color: var(--ink); }
+  .drawer-body { overflow-y: auto; padding: .3rem 1.4rem 3rem; font-family: var(--sans); }
+
+  .concept { padding: 1.1rem 0; border-bottom: 1px solid var(--line); scroll-margin-top: .5rem; border-radius: 6px; }
+  .concept h4 { font-family: var(--font); font-size: 1.08rem; margin: 0 0 .4rem; font-weight: 600; }
+  .concept p { font-size: 14px; color: var(--ink-soft); margin: 0 0 .6rem; line-height: 1.62; }
+  .concept .eg { background: var(--accent-soft); border-radius: 7px; padding: .65rem .85rem; font-size: 13px;
+    color: var(--ink-soft); line-height: 1.55; }
+  .concept .eg b { color: var(--ink); }
+  .concept.flash { animation: flashc 1.4s ease; }
+  @keyframes flashc { 0% { background: var(--accent-soft); } 100% { background: transparent; } }
+  .concept table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: .5rem 0; font-family: var(--mono); }
+  .concept td, .concept th { border: 1px solid var(--line); padding: 3px 7px; text-align: center; }
+  .concept th { color: var(--ink-faint); font-weight: 600; }
+
+  /* ---------- Pairwise pipeline demo ---------- */
+  .pipe-q { font-family: var(--font); font-style: italic; background: var(--accent-soft);
+    border-radius: 6px; padding: .5rem .8rem; margin: .4rem 0 .7rem; font-size: .98rem; }
+  .pipe-order { display: flex; align-items: center; gap: .5rem; font-size: 13px; margin: .35rem 0;
+    opacity: 0; transform: translateY(5px); transition: .45s; }
+  .pipe-order.show { opacity: 1; transform: none; }
+  .pipe-order .badge { font-family: var(--mono); font-size: 11px; padding: 1px 7px; border-radius: 10px;
+    background: var(--line); color: var(--ink-soft); }
+  .pipe-order .pick { font-weight: 700; color: var(--win); }
+  .pipe-stream { display: flex; flex-wrap: wrap; gap: 5px; margin: .7rem 0 .2rem; min-height: 24px; }
+  .vote-chip { width: 23px; height: 23px; border-radius: 5px; display: flex; align-items: center;
+    justify-content: center; font-size: 10.5px; font-weight: 700; color: #fff; animation: pop .25s ease; }
+  .vote-chip.v2 { background: var(--win); }
+  .vote-chip.v1 { background: var(--dud); }
+  .vote-chip.tie { background: var(--ink-faint); }
+
+  /* ---------- Worked example box ---------- */
+  .worked { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0; padding: 1.1rem 1.35rem; margin: 1.5rem 0 2rem; font-family: var(--sans);
+    font-size: 14.5px; }
+  .worked h4 { font-family: var(--font); font-size: 1.06rem; margin: 0 0 .3rem; font-weight: 600; }
+  .worked .setup { color: var(--ink-soft); margin: 0 0 .6rem; line-height: 1.55; }
+  .worked ol { margin: .3rem 0 .4rem; padding-left: 1.4rem; }
+  .worked li { margin: .55rem 0; color: var(--ink-soft); line-height: 1.55; }
+  .worked li b { color: var(--ink); }
+  .worked .eqn { font-family: var(--mono); font-size: 12.5px; background: var(--accent-soft);
+    padding: .5rem .7rem; border-radius: 6px; margin: .45rem 0; display: block; line-height: 1.5; }
+  .worked .result { background: var(--win-bg); color: var(--win); border-radius: 6px; padding: .55rem .8rem;
+    font-weight: 600; margin-top: .5rem; }
+
+  .drytable { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; margin: .5rem 0; }
+  .drytable th, .drytable td { border: 1px solid var(--line); padding: 3px 8px; text-align: center; }
+  .drytable th { color: var(--ink-faint); font-weight: 600; }
+  .drytable td.win { color: var(--win); font-weight: 700; }
+  .drytable td.loss { color: var(--dud); font-weight: 700; }
+  .dry-coefs { display: flex; flex-wrap: wrap; gap: 1.2rem; font-family: var(--mono); font-size: 13px;
+    margin: .6rem 0; }
+  .dry-coefs b { color: var(--accent); }
+
+  /* ---------- RAG failure-localizer demo ---------- */
+  .rag-flow { display: flex; align-items: stretch; gap: .5rem; margin: 1rem 0; flex-wrap: wrap; }
+  .rag-stage { flex: 1; min-width: 120px; border: 1px solid var(--line); border-radius: 8px; padding: .7rem;
+    text-align: center; transition: .3s; background: var(--bg); }
+  .rag-stage.lit { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-2px);
+    box-shadow: 0 3px 10px rgba(0,0,0,.1); }
+  .rag-name { font-weight: 700; font-size: 14px; font-family: var(--sans); }
+  .rag-sub { font-size: 11px; color: var(--ink-faint); font-family: var(--mono); margin-top: .15rem; }
+  .rag-arrow { display: flex; align-items: center; color: var(--ink-faint); font-size: 1.3rem; }
+  #rag-symptoms { flex-direction: column; align-items: stretch; }
+  #rag-symptoms .btn { font-size: 13px; text-align: left; }
+
+  /* ---------- Criteria cards ---------- */
+  .critcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(288px, 1fr)); gap: .8rem;
+    margin: 1.2rem 0; }
+  .critcard { border: 1px solid var(--line); border-radius: 10px; padding: .95rem 1.05rem;
+    background: var(--surface); font-family: var(--sans); }
+  .critcard h5 { font-family: var(--font); font-size: 1.05rem; margin: 0 0 .5rem; font-weight: 600;
+    display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+  .critcard .fam { font-size: 9.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+    padding: 2px 7px; border-radius: 20px; }
+  .fam-retr { background: var(--accent-soft); color: var(--accent); }
+  .fam-gen { background: var(--win-bg); color: var(--win); }
+  .fam-qual { background: var(--mixed-bg); color: var(--mixed); }
+  .fam-task { background: var(--line); color: var(--ink-soft); }
+  .critcard .def { font-size: 13.5px; color: var(--ink-soft); margin: 0 0 .6rem; line-height: 1.5; }
+  .critcard .row { font-size: 12.5px; line-height: 1.45; margin: .3rem 0; color: var(--ink-soft); }
+  .critcard .row .lab { font-weight: 700; color: var(--ink); text-transform: uppercase; letter-spacing: .04em;
+    font-size: 10.5px; display: block; margin-bottom: 1px; }
+
+  @media (max-width: 900px) {
+    nav.toc { display: none; }
+    .layout { padding: 0 1.3rem; }
+    body { font-size: 18px; }
+    h1 { font-size: 2rem; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <a href="#model">The 60-second model</a>
+    <a href="#part0">Part 0 · Foundations</a>
+    <a href="#e1" class="sub">1 · BLEU &amp; ROUGE</a>
+    <a href="#e2" class="sub">2 · BERTScore &amp; BLEURT</a>
+    <a href="#part1">Part 1 · The pivot</a>
+    <a href="#e3" class="sub">3 · G-Eval</a>
+    <a href="#e4" class="sub">4 · MT-Bench ★</a>
+    <a href="#e5" class="sub">5 · Chatbot Arena</a>
+    <a href="#part2">Part 2 · Fighting bias</a>
+    <a href="#e6" class="sub">6 · LC-AlpacaEval</a>
+    <a href="#e7" class="sub">7 · Arena-Hard</a>
+    <a href="#e8" class="sub">8 · Self-preference</a>
+    <a href="#part3">Part 3 · Open judges</a>
+    <a href="#e9" class="sub">9 · Prometheus</a>
+    <a href="#e10" class="sub">10 · JudgeLM et al.</a>
+    <a href="#part4">Part 4 · Juries &amp; RMs</a>
+    <a href="#e11" class="sub">11 · PoLL</a>
+    <a href="#e12" class="sub">12 · RewardBench</a>
+    <a href="#part5">Part 5 · Go deeper</a>
+    <a href="#playbook" class="sub">Practitioner's playbook</a>
+    <a href="#part6">Part 6 · Standard criteria</a>
+    <a href="#scoreboard">The scoreboard</a>
+    <a href="#order">Reading order</a>
+    <a href="#glossary">Glossary</a>
+  </nav>
+
+  <main>
+    <div class="eyebrow">Annotated Reading Path</div>
+    <h1>AI Evaluation &amp; LLM-as-a-Judge</h1>
+    <p class="lede">Written for someone new to ML evaluation who wants conceptual mastery without reading every paper. Each entry gives you the idea, why it mattered, and whether it held up. Read top to bottom — the order is the argument.</p>
+
+    <p style="font-family:var(--sans); font-size:14px; color:var(--ink-faint); margin:-1.5rem 0 2.5rem;">Terms with a <span class="cterm" data-c="spearman">dotted underline</span> are clickable — they open a plain-English explanation with an example. The <strong>&#128218; Concepts</strong> button (bottom-right) opens the full glossary anytime.</p>
+
+    <div class="callout">
+      <p><strong>The one question to hold in your head throughout:</strong> <em>validated against what ground truth, and how was that ground truth produced?</em> Almost every disagreement in this field is really a disagreement about the reference standard, not the technique. Internalize only that and you'll read the whole literature critically.</p>
+    </div>
+
+    <h2 id="model">The 60-second mental model</h2>
+    <p>Evaluating an LLM's open-ended output (an essay, an answer, a summary) is hard because there's no single correct string to compare against. The field has tried three broad answers:</p>
+    <ul>
+      <li><strong>Match against a reference</strong> (BLEU, ROUGE) — cheap and objective, but only works when a "right answer" exists, and correlates poorly with quality on open-ended tasks.</li>
+      <li><strong>Ask humans</strong> — the gold standard, but slow, expensive, and surprisingly inconsistent.</li>
+      <li><strong>Ask another LLM to judge</strong> — cheap, fast, scales, correlates ~80% with humans… but inherits a zoo of biases you must actively fight.</li>
+    </ul>
+    <p>Modern practice is a layered mix: automated LLM judges for scale, human eval to calibrate and audit the judges, and verifiable checks wherever a task allows them. The rest of this page is how the field got here.</p>
+
+    <!-- PART 0 -->
+    <h2 id="part0"><span class="part">Part 0</span>The foundations — why LLM judges had to be invented</h2>
+
+    <h3 id="e1"><span class="num">1</span>BLEU (2002) &amp; ROUGE (2004) — reference-overlap metrics</h3>
+    <p class="meta-links">BLEU: Papineni et al., ACL 2002 · <a href="https://aclanthology.org/P02-1040/">aclanthology.org/P02-1040</a> — ROUGE: Chin-Yew Lin, 2004 · <a href="https://aclanthology.org/W04-1013/">aclanthology.org/W04-1013</a></p>
+    <p class="field"><span class="k">The idea:</span> Score a generated text by how many <span class="cterm" data-c="ngram">n-grams</span> (word sequences) it shares with human reference texts. BLEU is <span class="cterm" data-c="pr">precision</span>-oriented (built for machine translation, with a "brevity penalty" so you can't win by being terse); ROUGE is <span class="cterm" data-c="pr">recall</span>-oriented (built for summarization).</p>
+    <p class="field"><span class="k">Why it mattered:</span> These made generation research <em>measurable</em> and automatable for two decades.</p>
+    <p class="field"><span class="k">The dud part <span class="tag dud">Dud</span></span> They measure <em>surface word overlap</em>, not meaning or quality. A perfect paraphrase with different words scores poorly; a fluent-but-wrong answer that reuses reference words scores well. <strong>This failure is the entire reason LLM judges exist</strong> — hold onto it. (Still fine for MT/summarization <em>with</em> references.)</p>
+
+    <div class="demo" id="demo-bleu">
+      <div class="demo-label">Try it</div>
+      <h4>Watch word-overlap scoring get fooled</h4>
+      <p>We grade answers by how many words they share with this "correct" reference. Shared words get <span class="tok match">highlighted</span>. Notice which answer wins.</p>
+      <p style="margin-bottom:.3rem"><strong>Reference:</strong></p>
+      <div class="sentence" id="bleu-ref">The cat sat on the warm mat.</div>
+      <div class="controls">
+        <button class="btn" data-cand="para">A correct paraphrase</button>
+        <button class="btn ghost" data-cand="salad">A wrong, high-overlap answer</button>
+      </div>
+      <div class="sentence" id="bleu-cand" style="min-height:2rem"></div>
+      <div class="barlabel"><span>Word-overlap score</span><span class="v" id="bleu-pct"></span></div>
+      <div class="meter"><span id="bleu-bar"></span></div>
+      <div id="bleu-verdict" class="demo-note"></div>
+    </div>
+
+    <h3 id="e2"><span class="num">2</span>BERTScore (2019) &amp; BLEURT (2020) — the learned/embedding bridge</h3>
+    <p class="meta-links">BERTScore: Zhang et al., ICLR 2020 · <a href="https://arxiv.org/abs/1904.09675">arxiv.org/abs/1904.09675</a> — BLEURT: Sellam et al., ACL 2020 · <a href="https://arxiv.org/abs/2004.04696">arxiv.org/abs/2004.04696</a></p>
+    <p class="field"><span class="k">The idea:</span> Replace exact word matching with <em>semantic</em> matching. BERTScore compares texts using contextual BERT embeddings, so paraphrases count as matches. BLEURT goes further — a <em>trained</em> metric (pre-trained on millions of synthetic examples, fine-tuned on human ratings) that outputs a learned quality score.</p>
+    <p class="field"><span class="k">Why it mattered:</span> First real step from "string overlap" toward "does this mean the same / is this good," and BLEURT introduced the now-central idea that <strong>an evaluator can itself be a trained model</strong> — the conceptual seed of LLM-as-a-judge.</p>
+    <p class="field"><span class="k">Status:</span> Better than BLEU/ROUGE, still reference-dependent, still weak on open-ended quality. A stepping stone.</p>
+
+    <div class="demo" id="demo-bert">
+      <div class="demo-label">Try it — semantic vs. surface</div>
+      <h4>What BERTScore fixed</h4>
+      <p>Same two answers as the previous demo, same reference ("The cat sat on the warm mat"). Now compare <strong>surface word-overlap</strong> (the old metric) against <strong>meaning similarity</strong> (BERTScore-style). Watch them disagree — and watch BERTScore reward the <em>right</em> answer.</p>
+      <div class="controls">
+        <button class="btn" data-b="para">Correct paraphrase</button>
+        <button class="btn ghost" data-b="salad">Wrong, high-overlap answer</button>
+      </div>
+      <div class="sentence" id="bert-cand" style="min-height:1.6rem"></div>
+      <div class="barlabel"><span>Surface overlap (BLEU-style)</span><span class="v" id="bert-s"></span></div>
+      <div class="meter"><span id="bert-sbar"></span></div>
+      <div class="barlabel"><span>Meaning similarity (BERTScore)</span><span class="v" id="bert-m"></span></div>
+      <div class="meter"><span id="bert-mbar" class="good"></span></div>
+      <div id="bert-verdict" class="demo-note"></div>
+    </div>
+
+    <!-- PART 1 -->
+    <h2 id="part1"><span class="part">Part 1</span>The pivot — LLMs judging LLMs (2023)</h2>
+
+    <h3 id="e3"><span class="num">3</span>G-Eval (2023) — LLM judges, done carefully</h3>
+    <p class="meta-links">Liu et al., EMNLP 2023 · <a href="https://arxiv.org/abs/2303.16634">arxiv.org/abs/2303.16634</a></p>
+    <p class="field"><span class="k">The idea:</span> Use GPT-4 as evaluator, but structure the prompt: give it the criteria, have it generate <span class="cterm" data-c="cot">chain-of-thought</span> evaluation steps, then fill in a score ("form-filling"). Optionally weight scores by token probabilities for finer numbers.</p>
+    <p class="field"><span class="k">What it showed:</span> Reached <strong><span class="cterm" data-c="spearman">Spearman</span> ~0.514 with humans on summarization</strong>, beating prior metrics. Also flagged early that LLM evaluators are <strong>biased toward LLM-generated text</strong>.</p>
+    <p class="field"><span class="k">Takeaway <span class="tag win">Won</span></span> Two ideas that stuck: <em>chain-of-thought before scoring</em> and <em>explicit rubrics</em>. This is the template most judge prompts still use.</p>
+
+    <div class="demo" id="demo-geval">
+      <div class="demo-label">Try it — reason, then score</div>
+      <h4>Why making the judge think first helps</h4>
+      <p>Task: grade this answer to <em>"How do I stop a memory leak in my Node app?"</em> — the answer given is: <strong>"Just restart the server every hour."</strong></p>
+      <div class="controls">
+        <button class="btn" id="geval-direct">Score directly</button>
+        <button class="btn" id="geval-cot">Reason first (G-Eval)</button>
+      </div>
+      <div id="geval-out" style="margin-top:.6rem"></div>
+    </div>
+
+    <h3 id="e4"><span class="num">4</span>Judging LLM-as-a-Judge with MT-Bench &amp; Chatbot Arena (2023) — <strong>the seminal paper</strong></h3>
+    <p class="meta-links">Zheng et al., NeurIPS 2023 · <a href="https://arxiv.org/abs/2306.05685">arxiv.org/abs/2306.05685</a></p>
+    <div class="callout plain"><p><strong>Read this one twice.</strong> It's the paper that legitimized the whole field.</p></div>
+    <p class="field"><span class="k">What it did:</span> Introduced <strong>MT-Bench</strong> (a multi-turn question set) and used <strong>Chatbot Arena</strong> human-preference data to ask: can a strong LLM stand in for human evaluators?</p>
+    <p class="field"><span class="k">The headline result:</span> GPT-4 as a judge reaches <strong>over 80% agreement with human preferences — essentially the same as the ~80% <span class="cterm" data-c="hha">agreement humans have with each other</span>.</strong> An LLM judge disagrees with you about as often as another qualified human would. That's the finding that made LLM judges credible.</p>
+    <p class="field"><span class="k">The gift that keeps giving — it named the core biases:</span></p>
+    <ul>
+      <li><strong>Position bias</strong> — favors whichever answer is shown first (or second).</li>
+      <li><strong>Verbosity bias</strong> — favors longer answers, regardless of quality.</li>
+      <li><strong>Self-enhancement bias</strong> — favors outputs from its own model family.</li>
+      <li><strong>Weak math/reasoning grading</strong> — rubber-stamps confident-but-wrong logic.</li>
+    </ul>
+    <p class="field"><span class="k">Why it's foundational <span class="tag win">Won</span></span> Every later paper here is either <em>using</em> this result or <em>fixing</em> one of these four problems. If you read one primary source, read this.</p>
+
+    <div class="demo" id="demo-pos">
+      <div class="demo-label">Try it — position bias</div>
+      <h4>The judge tracks the <em>slot</em>, not the quality</h4>
+      <p>Two answers of genuinely <em>equal</em> quality. Our (deliberately biased) judge always leans toward whatever sits in the first slot. Swap them and watch the verdict flip — even though nothing about the answers changed.</p>
+      <div class="pair">
+        <div class="ans" id="pos-slotA"><div class="slot">Slot A (shown first)</div><div class="who">—</div></div>
+        <div class="ans" id="pos-slotB"><div class="slot">Slot B (shown second)</div><div class="who">—</div></div>
+      </div>
+      <div class="controls"><button class="btn" id="pos-swap">⇄ Swap positions</button></div>
+      <div id="pos-verdict" class="verdict"></div>
+      <div class="demo-note" id="pos-count">The real fix: score <em>both</em> orders and average — the position cancels out.</div>
+    </div>
+
+    <div class="demo" id="demo-verb">
+      <div class="demo-label">Try it — verbosity bias</div>
+      <h4>Padding raises the score without adding quality</h4>
+      <p>Drag the slider to pad the same answer with filler. The <em>true</em> quality is flat — but a length-biased judge keeps rewarding the extra words. The gap between the two bars <strong>is</strong> the bias.</p>
+      <input type="range" min="0" max="100" value="8" id="verb-slider">
+      <div class="barlabel"><span>True quality (unchanged)</span><span class="v" id="verb-qv"></span></div>
+      <div class="meter"><span id="verb-quality" class="good"></span></div>
+      <div class="barlabel"><span>Length-biased judge score</span><span class="v" id="verb-jv"></span></div>
+      <div class="meter"><span id="verb-judge" class="bad"></span></div>
+      <div class="sentence" id="verb-preview" style="font-size:.95rem; margin-top:.9rem; color:var(--ink-soft)"></div>
+    </div>
+
+    <h3 id="e5"><span class="num">5</span>Chatbot Arena (2024) — the human-preference backbone</h3>
+    <p class="meta-links">Chiang et al., ICML 2024 · <a href="https://arxiv.org/abs/2403.04132">arxiv.org/abs/2403.04132</a></p>
+    <p class="field"><span class="k">The idea:</span> A public site where users chat with two anonymous models side by side and vote for the better one. Votes are aggregated with an <span class="cterm" data-c="elo">Elo/Bradley-Terry</span> rating (the chess-ranking math) into a live leaderboard. The paper reports <strong>240K+ human votes</strong>.</p>
+    <p class="field"><span class="k">Why it matters:</span> This is the <em>human ground truth</em> that LLM judges are measured against. It also cements a key choice — <strong><span class="cterm" data-c="pairwise">pairwise comparison</span> ("A vs B") over absolute scoring</strong> — because humans are far more reliable at "which is better" than "rate this 1–10." This recurs everywhere.</p>
+
+    <div class="demo" id="demo-scoring">
+      <div class="demo-label">Try it — pointwise vs. pairwise</div>
+      <h4>Absolute scores clump; comparisons sort cleanly</h4>
+      <p>Six answers, genuinely ranging from weak to excellent (hover a chip to see its true level). Ask a judge to rate each <em>1–10 in isolation</em> and everything piles into a mushy 7–8 band — you can't tell them apart. Ask <em>"which is better?"</em> across pairs and a clean order falls out.</p>
+      <div class="track" id="score-track"></div>
+      <div class="controls">
+        <button class="btn" id="score-point">Score each 1–10</button>
+        <button class="btn" id="score-pair">Rank by comparison</button>
+        <button class="btn ghost" id="score-reset">Reset</button>
+      </div>
+      <div id="score-caption" class="demo-note"></div>
+    </div>
+
+    <div class="demo" id="demo-elo">
+      <div class="demo-label">Watch it — Elo</div>
+      <h4>How noisy pairwise votes become a stable ranking</h4>
+      <p>Three models with <em>hidden</em> true strengths start tied at 1000. Each match, two are compared; the winner's rating rises, the loser's falls (the chess math). Any single vote is noisy — but watch the true order emerge over many matches.</p>
+      <div id="elo-bars"></div>
+      <div class="controls">
+        <button class="btn" id="elo-play">▶ Play 40 matches</button>
+        <button class="btn ghost" id="elo-reset">Reset</button>
+      </div>
+      <div id="elo-status" class="demo-note">Hidden truth: A is strongest, then B, then C. The ratings don't know that — they only see match outcomes.</div>
+    </div>
+
+    <div class="demo" id="demo-pipe">
+      <div class="demo-label">Try it — the full pairwise pipeline</div>
+      <h4>From "which is better?" to a ship decision</h4>
+      <p>You're A/B testing two versions of your chatbot's prompt. This is the whole pipeline: judge each pair in <em>both orders</em> to cancel position bias, then count wins across a batch.</p>
+
+      <p style="margin:1rem 0 .2rem"><strong>Step 1 — one comparison, done right.</strong></p>
+      <div class="pipe-q" id="pipe-q"></div>
+      <div class="pair">
+        <div class="ans"><div class="slot">Prompt v1's answer</div><div class="who" id="pipe-a1" style="font-size:.9rem;line-height:1.4"></div></div>
+        <div class="ans"><div class="slot">Prompt v2's answer</div><div class="who" id="pipe-a2" style="font-size:.9rem;line-height:1.4"></div></div>
+      </div>
+      <div class="controls"><button class="btn" id="pipe-judge1">Judge this pair (both orders)</button></div>
+      <div id="pipe-orders"></div>
+      <div id="pipe-v1verdict" class="verdict" style="display:none"></div>
+
+      <p style="margin:1.3rem 0 .2rem"><strong>Step 2 — scale to a batch and tally.</strong></p>
+      <p>Repeat that for 20 real user questions. Each pair resolves to a v2 win <span style="color:var(--win);font-weight:700">■</span>, a v1 win <span style="color:var(--dud);font-weight:700">■</span>, or a tie <span style="color:var(--ink-faint);font-weight:700">■</span>.</p>
+      <div class="controls"><button class="btn" id="pipe-batch">Judge 20 pairs</button><button class="btn ghost" id="pipe-reset">Reset</button></div>
+      <div id="pipe-stream" class="pipe-stream"></div>
+      <div class="barlabel"><span>Win-rate: Prompt v2 vs v1 (decisive comparisons)</span><span class="v" id="pipe-wr">—</span></div>
+      <div class="meter"><span id="pipe-wrbar" class="good"></span></div>
+      <div id="pipe-decision" class="demo-note"></div>
+    </div>
+
+    <!-- PART 2 -->
+    <h2 id="part2"><span class="part">Part 2</span>Fighting the biases (2024)</h2>
+    <p>Where the field matured: less "LLM judges work!" and more "here's exactly how they fail, and here's the patch."</p>
+
+    <h3 id="e6"><span class="num">6</span>Length-Controlled AlpacaEval (2024) — killing verbosity bias</h3>
+    <p class="meta-links">Dubois et al., 2024 · <a href="https://arxiv.org/abs/2404.04475">arxiv.org/abs/2404.04475</a> — (AlpacaEval is a tool; its underlying paper is AlpacaFarm, <a href="https://arxiv.org/abs/2305.14387">arxiv.org/abs/2305.14387</a>.)</p>
+    <p class="field"><span class="k">The problem:</span> AlpacaEval (a GPT-4-judged leaderboard) was gameable — models learned that just <em>writing more</em> raised their score, thanks to verbosity bias.</p>
+    <p class="field"><span class="k">The fix:</span> A statistical <span class="cterm" data-c="regression">regression</span> that estimates "what would the score be if both answers were the <em>same length</em>?" — removing length as a <span class="cterm" data-c="confounder">confounder</span>. Simple, cheap, much harder to game.</p>
+
+    <div class="worked">
+      <h4>Worked example — how the regression removes length</h4>
+      <p class="setup"><b>Setup.</b> "Model Verbose" was compared against a fixed baseline on many instructions. Its raw win-rate came out <b>64%</b> — but its answers averaged <b>+155 tokens longer</b> than the baseline's. Is that 64% skill, or just length?</p>
+      <ol>
+        <li><b>Record two things per instruction:</b> did the judge prefer our model? (1 or 0), and how much longer was our answer? (the token difference, Δlength).</li>
+        <li><b>Fit one regression</b> that predicts the verdict from a quality signal <em>and</em> the length gap, so it can tell the two influences apart:
+          <span class="eqn">P(win) = logistic( quality &minus; k &times; &Delta;length )</span>
+          The fit learns how much "winning" tracks genuine quality vs. how much just tracks being longer.</li>
+        <li><b>Read what length alone bought.</b> Suppose the fitted coefficient works out to <b>"+100 tokens ≈ +9 points of win-rate."</b> Our model was +155 tokens longer → about <b>+14 points</b> came purely from length.</li>
+        <li><b>Ask the counterfactual.</b> Set <span class="eqn" style="display:inline;padding:1px 6px">&Delta;length = 0</span> in the fitted model — "<em>what if both answers were the same length?</em>" &nbsp;→&nbsp; 64% &minus; 14% ≈ <b>50%</b>.</li>
+      </ol>
+      <div class="result">Length-controlled win-rate ≈ 50% → once length is subtracted, Model Verbose is no better than the baseline. Its leaderboard edge was almost entirely padding.</div>
+      <p class="setup" style="margin:.7rem 0 0; font-size:12.5px; font-style:italic;">The real method fits this jointly across all models and instructions (a logistic GLM with terms for the model, the instruction, and the length difference) and reports each model's predicted win-rate at zero length difference. Numbers here are illustrative.</p>
+    </div>
+
+    <div class="demo" id="demo-dry">
+      <div class="demo-label">Dry run — the regression on real numbers</div>
+      <h4>Watch it actually fit</h4>
+      <p>A tiny dataset: 14 instructions where "Model Verbose" was compared to the baseline. Each row is how much longer its answer was (Δlength, in tokens) and whether the judge picked it. The logistic regression below is <strong>computed live in your browser by gradient descent</strong> — nothing is hardcoded. Watch the coefficients converge, then read off the length-controlled win-rate.</p>
+      <div style="overflow-x:auto"><table class="drytable" id="dry-table"></table></div>
+      <div class="controls"><button class="btn" id="dry-run">▶ Fit the regression</button><button class="btn ghost" id="dry-reset">Reset</button></div>
+      <div class="dry-coefs" id="dry-coefs"></div>
+      <div id="dry-result" class="verdict" style="display:none"></div>
+    </div>
+    <p class="field"><span class="k">Takeaway <span class="tag win">Won</span></span> A model example of the mature move: <em>measure a bias, then mathematically subtract it</em> rather than hoping the judge ignores it.</p>
+
+    <div class="demo" id="demo-lc">
+      <div class="demo-label">Try it — length control</div>
+      <h4>Subtracting the length advantage</h4>
+      <p>Two models answer equally well, but <strong>Model Verbose</strong> just writes longer. A raw judge hands it the win. Length control asks "what if both were the same length?" — and the edge vanishes.</p>
+      <div class="axis-row"><div class="lbl">Terse</div><div class="meter"><span id="lc-terse"></span></div><div class="num" id="lc-tn"></div></div>
+      <div class="axis-row"><div class="lbl">Verbose</div><div class="meter"><span id="lc-verb"></span></div><div class="num" id="lc-vn"></div></div>
+      <div class="controls">
+        <button class="btn" id="lc-apply">Apply length control</button>
+        <button class="btn ghost" id="lc-reset">Reset (raw)</button>
+      </div>
+      <div id="lc-cap" class="demo-note"></div>
+    </div>
+
+    <h3 id="e7"><span class="num">7</span>Arena-Hard (2024) — better questions, not just better judges</h3>
+    <p class="meta-links">Li et al., 2024 · <a href="https://arxiv.org/abs/2406.11939">arxiv.org/abs/2406.11939</a> · repo: <a href="https://github.com/lmarena/arena-hard-auto">github.com/lmarena/arena-hard-auto</a></p>
+    <p class="field"><span class="k">The idea:</span> A pipeline (BenchBuilder) that mines real Chatbot Arena conversations for genuinely <em>hard, discriminating</em> prompts, producing an automatic benchmark that tracks the human leaderboard closely.</p>
+    <p class="field"><span class="k">Why it matters:</span> Judge <em>quality</em> is only half the battle — <strong>your test questions must actually separate good models from bad ones.</strong> An easy question set makes every model look equal no matter how good your judge is.</p>
+
+    <div class="demo" id="demo-hard">
+      <div class="demo-label">Try it — question difficulty</div>
+      <h4>Easy questions hide the gaps</h4>
+      <p>The same three models, graded on two question sets. Easy questions make everyone look great and roughly equal. Hard, discriminating questions reveal who's actually better.</p>
+      <div class="controls">
+        <button class="btn" id="hard-easy">Easy questions</button>
+        <button class="btn ghost" id="hard-hard">Hard questions</button>
+      </div>
+      <div id="hard-bars" style="margin-top:.6rem"></div>
+      <div id="hard-cap" class="demo-note"></div>
+    </div>
+
+    <h3 id="e8"><span class="num">8</span>LLM Evaluators Recognize and Favor Their Own Generations (2024) — self-preference, confirmed</h3>
+    <p class="meta-links">Panickssery, Bowman, Feng · NeurIPS 2024 · <a href="https://arxiv.org/abs/2404.13076">arxiv.org/abs/2404.13076</a></p>
+    <p class="field"><span class="k">What it showed:</span> Models like GPT-4 can <em>recognize their own writing</em> above chance, and — the key finding — <strong>the strength of a model's self-preference bias is linearly correlated with how well it recognizes its own output.</strong> The favoritism isn't random; it's tied to self-recognition.</p>
+    <p class="field"><span class="k">Takeaway <span class="tag dud">Confirmed failure mode</span></span> Don't grade a model with itself (or its own family) as the sole judge. This is why diverse juries became attractive.</p>
+
+    <div class="demo" id="demo-self">
+      <div class="demo-label">Try it — self-preference</div>
+      <h4>The judge quietly favors its own writing</h4>
+      <p>The judge is <strong>Model X</strong>. Two answers of genuinely equal quality (base 60/100). But whichever answer Model X <em>authored</em> gets a hidden boost. Toggle the author and watch the verdict move — the answers never changed.</p>
+      <div class="pair">
+        <div class="ans" id="self-A"><div class="slot">Answer A</div><div class="who" id="self-Aw"></div><div id="self-As" style="margin-top:.3rem;font-family:var(--mono);font-size:13px"></div></div>
+        <div class="ans" id="self-B"><div class="slot">Answer B</div><div class="who" id="self-Bw"></div><div id="self-Bs" style="margin-top:.3rem;font-family:var(--mono);font-size:13px"></div></div>
+      </div>
+      <div class="controls"><button class="btn" id="self-toggle">↺ Toggle: which answer did Model X write?</button></div>
+      <div id="self-cap" class="verdict"></div>
+      <div class="demo-note">The paper's twist: the <em>stronger</em> a model's ability to recognize its own text, the <em>bigger</em> this boost — the bias scales with self-recognition.</div>
+    </div>
+
+    <!-- PART 3 -->
+    <h2 id="part3"><span class="part">Part 3</span>Open &amp; fine-tuned judges — can we avoid depending on GPT-4?</h2>
+    <p>Frontier-model judges are expensive, closed, change without warning, and can't be audited. So: can we <em>train</em> a dedicated open judge?</p>
+
+    <h3 id="e9"><span class="num">9</span>Prometheus (2023) &amp; Prometheus 2 (2024) — the open rubric-follower</h3>
+    <p class="meta-links">Prometheus: Kim et al., ICLR 2024 · <a href="https://arxiv.org/abs/2310.08491">arxiv.org/abs/2310.08491</a> — Prometheus 2: Kim et al., 2024 · <a href="https://arxiv.org/abs/2405.01535">arxiv.org/abs/2405.01535</a></p>
+    <p class="field"><span class="k">The idea:</span> Fine-tune an open model specifically to evaluate against a <em>user-supplied <span class="cterm" data-c="rubric">rubric</span></em>. Prometheus trained on the "Feedback Collection" (<strong>1K rubrics, 20K instructions, 100K responses with GPT-4 feedback</strong>). Prometheus 2 added <strong>both</strong> modes — absolute scoring <em>and</em> pairwise ranking — in one model.</p>
+    <p class="field"><span class="k">What it showed:</span> An open evaluator can match GPT-4-level agreement with humans on custom, fine-grained rubrics.</p>
+    <p class="field"><span class="k">Takeaway <span class="tag win">Won</span></span> Rubric-based, fine-tuned judges are viable and reproducible. Best when you have <em>specific, stable criteria</em>.</p>
+
+    <div class="demo" id="demo-rubric">
+      <div class="demo-label">Try it — rubric scoring</div>
+      <h4>"Vibes" vs. a rubric</h4>
+      <p>A judge grading on gut feeling gives a vague, unrepeatable number. A rubric turns "is it good?" into concrete, checkable criteria. Tick what an answer actually satisfies and the score builds itself — and it's the <em>same</em> every run.</p>
+      <ul class="crit" id="rubric-list"></ul>
+      <div class="barlabel"><span>Rubric score (explicit &amp; reproducible)</span><span class="v" id="rubric-score"></span></div>
+      <div class="meter"><span id="rubric-bar" class="good"></span></div>
+      <div class="demo-note">Without a rubric, this same answer might get a hand-wavy "7/10" that a second run wouldn't reproduce. The rubric makes the score <em>auditable</em>.</div>
+    </div>
+
+    <h3 id="e10"><span class="num">10</span>JudgeLM, PandaLM, Auto-J (2023) — the fine-tuned-judge cohort</h3>
+    <p class="meta-links">JudgeLM: <a href="https://arxiv.org/abs/2310.17631">arxiv.org/abs/2310.17631</a> — PandaLM: <a href="https://arxiv.org/abs/2306.05087">arxiv.org/abs/2306.05087</a> — Auto-J: <a href="https://arxiv.org/abs/2310.05470">arxiv.org/abs/2310.05470</a></p>
+    <p class="field"><span class="k">The common idea:</span> Distill judging ability from GPT-4 into smaller open models.</p>
+    <ul>
+      <li><strong>JudgeLM</strong> engineered explicit fixes for the MT-Bench biases: <em>swap augmentation</em> (show answers in both orders) for position bias, plus reference support and "reference drop." Hit &gt;90% agreement with its teacher.</li>
+      <li><strong>PandaLM</strong> targeted <em>instruction-tuning model selection</em> and deliberately avoided API models to prevent test-data leakage.</li>
+      <li><strong>Auto-J</strong> is a 13B <em>generative</em> judge trained across 58 real-world scenarios, giving critiques (not just scores) for pairwise and single-answer settings.</li>
+    </ul>
+    <p class="field"><span class="k">Honest verdict <span class="tag mixed">Mixed</span></span> These work and are cheap, but the recurring finding is that <strong>fine-tuned open judges generalize worse than prompted frontier judges</strong> outside their training distribution <span class="cterm" data-c="ood">(out-of-distribution)</span>. Great for a known, narrow task; riskier as a general-purpose grader.</p>
+
+    <div class="demo" id="demo-gen">
+      <div class="demo-label">Try it — generalization</div>
+      <h4>Where the fine-tuned specialist falls off</h4>
+      <p>A judge fine-tuned on one kind of task vs. a general frontier judge. On the task it was trained for, the specialist wins. Move it to an unfamiliar task and it drops — the generalist barely flinches.</p>
+      <div class="controls">
+        <button class="btn" id="gen-in">In-domain task</button>
+        <button class="btn ghost" id="gen-out">New / out-of-domain task</button>
+      </div>
+      <div id="gen-bars" style="margin-top:.6rem"></div>
+      <div id="gen-cap" class="demo-note"></div>
+    </div>
+
+    <!-- PART 4 -->
+    <h2 id="part4"><span class="part">Part 4</span>Juries, reward models, and grading the graders</h2>
+
+    <h3 id="e11"><span class="num">11</span>Replacing Judges with Juries — Panel of LLM evaluators (PoLL) (2024)</h3>
+    <p class="meta-links">Verga et al. (Cohere), 2024 · <a href="https://arxiv.org/abs/2404.18796">arxiv.org/abs/2404.18796</a></p>
+    <p class="field"><span class="k">The idea:</span> Instead of one big judge, use a <strong>panel of several smaller judges from <em>different model families</em></strong> and pool their verdicts.</p>
+    <p class="field"><span class="k">What it showed:</span> The panel <strong>outperforms a single large judge, reduces intra-model bias</strong> (no single family's self-preference dominates), and is <strong>7×+ cheaper</strong> than a single GPT-4 judge.</p>
+    <p class="field"><span class="k">Takeaway <span class="tag win">Clear win</span></span> One of the most durable practical ideas in the field. Diversity beats size, and it directly neutralizes self-preference bias (see #8) while cutting cost.</p>
+
+    <div class="demo" id="demo-jury">
+      <div class="demo-label">Try it — jury vs. single judge</div>
+      <h4>One biased judge, or a diverse panel?</h4>
+      <p>The genuinely better answer here is <strong>B</strong>. But the first judge comes from the same model family that <em>wrote</em> A, so self-preference makes it vote A — the wrong call. Add diverse jurors and the majority converges on the truth.</p>
+      <div id="jury-seats" class="jury-seats"></div>
+      <div class="controls">
+        <button class="btn" id="jury-add">+ Add a diverse juror</button>
+        <button class="btn ghost" id="jury-reset">Reset to single judge</button>
+      </div>
+      <div id="jury-tally" class="verdict"></div>
+      <div class="demo-note">No single juror is perfect — but their independent errors cancel, and the panel is cheaper than one huge judge.</div>
+    </div>
+
+    <h3 id="e12"><span class="num">12</span>RewardBench (2024) — connecting judges to RLHF</h3>
+    <p class="meta-links">Lambert et al. (AI2), 2024 · <a href="https://arxiv.org/abs/2403.13787">arxiv.org/abs/2403.13787</a></p>
+    <p class="field"><span class="k">The idea:</span> A benchmark for <strong>reward models</strong> — the models that score outputs during RLHF training. It uses (prompt, chosen, rejected) trios across chat, reasoning, and safety, including pairs differing by a subtle <em>verifiable</em> error.</p>
+    <p class="field"><span class="k">Why it matters:</span> A reward model <em>is</em> a judge, just used as a training signal instead of a report. RewardBench was the first broad, structured way to ask "how good is your grader?" — i.e. <strong>meta-evaluation</strong>. This closes the loop: <strong>you can't trust a judge you haven't audited.</strong></p>
+
+    <div class="demo" id="demo-rb">
+      <div class="demo-label">Try it — grade the grader</div>
+      <h4>You have to audit the judge itself</h4>
+      <p>Four cases where the <em>truly better</em> answer is already known. Run the judge and see how often it agrees with the truth — including one subtle factual-error pair it's likely to be fooled by.</p>
+      <div id="rb-cases"></div>
+      <div class="controls"><button class="btn" id="rb-run">Run the judge</button><button class="btn ghost" id="rb-reset">Reset</button></div>
+      <div id="rb-cap" class="verdict"></div>
+    </div>
+
+    <!-- PART 5 -->
+    <h2 id="part5"><span class="part">Part 5</span>Where to go deep, and what to actually use</h2>
+
+    <h3><span class="num">13</span>The two surveys — your "everything else" backstops</h3>
+    <ul>
+      <li><strong>A Survey on LLM-as-a-Judge</strong> — Gu et al., 2024 · <a href="https://arxiv.org/abs/2411.15594">arxiv.org/abs/2411.15594</a> (organized around <em>building reliable judges</em>: consistency, bias mitigation, scenario adaptation).</li>
+      <li><strong>LLMs-as-Judges: A Comprehensive Survey</strong> — Li et al., 2024 · <a href="https://arxiv.org/abs/2412.05579">arxiv.org/abs/2412.05579</a> (five lenses: functionality, methodology, applications, meta-evaluation, limitations). Curated list: <a href="https://github.com/CSHaitao/Awesome-LLMs-as-Judges">github.com/CSHaitao/Awesome-LLMs-as-Judges</a></li>
+    </ul>
+
+    <h3 id="playbook">The practitioner's playbook — techniques from the surveys</h3>
+    <p>Both surveys converge on the same working advice for building a judge you can trust. Here it is as a checklist, grouped by what stage it acts on: <span class="fam fam-retr" style="font-size:9.5px;padding:2px 7px;border-radius:20px;font-family:var(--sans);font-weight:700;letter-spacing:.07em">prompt design</span> <span class="fam fam-gen" style="font-size:9.5px;padding:2px 7px;border-radius:20px;font-family:var(--sans);font-weight:700;letter-spacing:.07em">score format</span> <span class="fam fam-qual" style="font-size:9.5px;padding:2px 7px;border-radius:20px;font-family:var(--sans);font-weight:700;letter-spacing:.07em">debias</span> <span class="fam fam-task" style="font-size:9.5px;padding:2px 7px;border-radius:20px;font-family:var(--sans);font-weight:700;letter-spacing:.07em">reliability</span></p>
+
+    <div class="critcards">
+      <div class="critcard"><h5>Chain-of-thought scoring <span class="fam fam-retr">prompt design</span></h5><p class="def">Make the judge reason step by step <em>before</em> it emits a score.</p><div class="row"><span class="lab">Why</span>More accurate, and you can audit <em>why</em> it scored that way. (G-Eval, entry #3)</div></div>
+
+      <div class="critcard"><h5>Explicit rubric <span class="fam fam-retr">prompt design</span></h5><p class="def">Spell out the criteria and their weights instead of asking "is it good?"</p><div class="row"><span class="lab">Why</span>Repeatable and auditable; kills subjective drift. (Prometheus, entry #9)</div></div>
+
+      <div class="critcard"><h5>Few-shot calibration <span class="fam fam-retr">prompt design</span></h5><p class="def">Put a handful of already-scored good/bad examples in the prompt.</p><div class="row"><span class="lab">Why</span>Anchors the scale, so "7" means the same thing every run and across items.</div></div>
+
+      <div class="critcard"><h5>Reference-guided judging <span class="fam fam-retr">prompt design</span></h5><p class="def">Give the judge a gold / reference answer to compare against.</p><div class="row"><span class="lab">Why</span>Sharply improves accuracy whenever a known-correct answer exists.</div></div>
+
+      <div class="critcard"><h5>One criterion per call <span class="fam fam-retr">prompt design</span></h5><p class="def">Judge a single narrow axis per call — not "rate this overall."</p><div class="row"><span class="lab">Why</span>Narrow prompts are far more reliable than omnibus ones. (This is why the criteria in Part 6 are separate evaluators.)</div></div>
+
+      <div class="critcard"><h5>Pairwise over pointwise <span class="fam fam-gen">score format</span></h5><p class="def">Prefer "A vs B" to an absolute 1–10 rating.</p><div class="row"><span class="lab">Why</span>Relative judgments are much more reliable; absolute scores clump. (MT-Bench, entry #4)</div></div>
+
+      <div class="critcard"><h5>Structured output <span class="fam fam-gen">score format</span></h5><p class="def">Force a structured verdict (JSON / a fixed enum), not free prose.</p><div class="row"><span class="lab">Why</span>Removes parsing noise and format drift; makes results machine-aggregatable.</div></div>
+
+      <div class="critcard"><h5>Probability-weighted scores <span class="fam fam-gen">score format</span></h5><p class="def">Weight the score by the model's token probabilities instead of the raw number it prints.</p><div class="row"><span class="lab">Why</span>Finer-grained, less clumping at round numbers. (G-Eval, entry #3)</div></div>
+
+      <div class="critcard"><h5>Position swapping <span class="fam fam-qual">debias</span></h5><p class="def">Run each pairwise comparison in both orders; require agreement or average.</p><div class="row"><span class="lab">Fixes</span>Position bias — the judge favoring whatever's shown first. (entry #4)</div></div>
+
+      <div class="critcard"><h5>Length control <span class="fam fam-qual">debias</span></h5><p class="def">Statistically remove answer length as a factor in the score.</p><div class="row"><span class="lab">Fixes</span>Verbosity bias — longer answers winning for no reason. (LC-AlpacaEval, entry #6)</div></div>
+
+      <div class="critcard"><h5>Anonymize authorship <span class="fam fam-qual">debias</span></h5><p class="def">Hide which model produced which answer from the judge.</p><div class="row"><span class="lab">Fixes</span>Self-preference — a model favoring its own family's output. (entry #8)</div></div>
+
+      <div class="critcard"><h5>Panel of diverse judges <span class="fam fam-task">reliability</span></h5><p class="def">Pool verdicts from several judges of <em>different</em> model families.</p><div class="row"><span class="lab">Why</span>Cancels single-model bias and is often cheaper than one big judge. (PoLL, entry #11)</div></div>
+
+      <div class="critcard"><h5>Self-consistency <span class="fam fam-task">reliability</span></h5><p class="def">Sample the same judge several times; take the majority or average.</p><div class="row"><span class="lab">Why</span>Cuts run-to-run variance from a noisy judge — trust the aggregate, not one call.</div></div>
+
+      <div class="critcard"><h5>Calibrate against humans <span class="fam fam-task">reliability</span></h5><p class="def">Measure the judge's agreement with human labels on a sample before trusting it.</p><div class="row"><span class="lab">Why</span>You can't trust a judge you haven't audited — this is meta-evaluation. (RewardBench, entry #12)</div></div>
+    </div>
+    <p class="demo-note">If you adopt just three: <strong>chain-of-thought + rubric</strong> for the prompt, <strong>pairwise or position-swapping</strong> for the format, and <strong>calibrate against humans</strong> before you trust any of it. The rest you add as specific biases show up in your data.</p>
+
+    <h3><span class="num">14</span>Holistic Evaluation — HELM (2022)</h3>
+    <p class="meta-links">Liang et al., Stanford CRFM · <a href="https://arxiv.org/abs/2211.09110">arxiv.org/abs/2211.09110</a> · repo: <a href="https://github.com/stanford-crfm/helm">github.com/stanford-crfm/helm</a></p>
+    <p>Evaluation isn't one number. HELM measures <strong>7 metrics</strong> (accuracy, <span class="cterm" data-c="calibration">calibration</span>, robustness, fairness, bias, toxicity, efficiency) across <strong>16 scenarios</strong>, so models are compared on the <em>same axes</em>. A reminder that "which is better" depends on which of these you care about.</p>
+
+    <div class="demo" id="demo-helm">
+      <div class="demo-label">Try it — there's no single "best"</div>
+      <h4>"Which is better" depends on the axis</h4>
+      <p>Two models across five axes. Pick what you actually care about, and the winner changes. There is no one-number "best model."</p>
+      <div id="helm-bars" style="margin:.7rem 0"></div>
+      <div class="controls">
+        <button class="btn" data-axis="Accuracy">Rank by Accuracy</button>
+        <button class="btn ghost" data-axis="Safety">Rank by Safety</button>
+        <button class="btn ghost" data-axis="Efficiency">Rank by Efficiency</button>
+      </div>
+      <div id="helm-cap" class="verdict"></div>
+    </div>
+
+    <h3><span class="num">15</span>The practitioner's toolbox (frameworks)</h3>
+    <ul>
+      <li><strong>lm-evaluation-harness</strong> (EleutherAI) · <a href="https://github.com/EleutherAI/lm-evaluation-harness">github.com/EleutherAI/lm-evaluation-harness</a> — the de facto standard for standardized few-shot academic benchmarks; backs HuggingFace's Open LLM Leaderboard.</li>
+      <li><strong>Inspect</strong> (UK AI Safety/Security Institute) · <a href="https://inspect.aisi.org.uk/">inspect.aisi.org.uk</a> — modern framework built around <code>dataset → Task → Solver → Scorer</code>; strong for agentic/multi-turn and sandboxed evals. <code>pip install inspect-ai</code></li>
+      <li><strong>App-layer tools</strong> worth knowing by name: DeepEval, RAGAS (RAG-specific), promptfoo, Braintrust, LangSmith.</li>
+    </ul>
+
+    <!-- PART 6 -->
+    <h2 id="part6"><span class="part">Part 6</span>The standard criteria — Faithfulness, Relevance, and friends</h2>
+    <p>Open any eval tool — Langfuse, RAGAS, Braintrust — and you meet the same list of judge criteria: <em>Faithfulness, Answer Relevance, Context Precision, Context Recall, Helpfulness, Conciseness, Correctness…</em> They look arbitrary. They're not. Two reasons they became the shared standard:</p>
+    <ul>
+      <li><strong>Shared vocabulary.</strong> When your judge prompt, your teammate, and a vendor's template all say "faithfulness," they mean the <em>same measurable thing</em>. That interoperability is why libraries ship them as named, reusable evaluators.</li>
+      <li><strong>Diagnostic decomposition.</strong> A single "is this good?" score can't tell you <em>what to fix</em>. Splitting quality into single-purpose axes <strong>localizes the failure</strong> — is the retriever missing documents, or is the generator hallucinating? Different bugs, different fixes.</li>
+    </ul>
+    <p>They come from four distinct lineages — knowing which one a criterion belongs to tells you what it's really for.</p>
+
+    <h3>Lineage 1 — Helpful · Honest · Harmless (Anthropic, 2021)</h3>
+    <p class="meta-links">Askell et al., "A General Language Assistant as a Laboratory for Alignment" · <a href="https://arxiv.org/abs/2112.00861">arxiv.org/abs/2112.00861</a></p>
+    <p>This paper framed a good assistant as <strong>Helpful, Honest, Harmless (HHH)</strong> — and that's the ancestor of <strong>Helpfulness</strong> (plus honesty/harmlessness) as the near-universal <em>top-level</em> quality axis you see everywhere. <span class="k" style="font-weight:600">Why it stuck:</span> HHH is the alignment target for assistants, and it became the very thing RLHF optimizes — so it's the natural thing to also <em>measure</em>.</p>
+
+    <h3>Lineage 2 — Generic generation quality: SummEval (2021)</h3>
+    <p class="meta-links">Fabbri et al., "SummEval: Re-evaluating Summarization Evaluation" · TACL 2021 · <a href="https://aclanthology.org/2021.tacl-1.24/">aclanthology.org/2021.tacl-1.24</a></p>
+    <p>SummEval re-standardized text-quality evaluation around four axes: <strong>Coherence</strong> (well-organized?), <strong>Consistency</strong> (faithful to the source, no invented facts?), <strong>Fluency</strong> (well-written sentences?), and <strong>Relevance</strong> (picks the important content?). G-Eval (entry #3) graded on exactly these. <span style="font-weight:600">Why it stuck:</span> it cleanly separates <em>writing quality</em> from <em>faithfulness</em> from <em>content selection</em> — three things that fail independently. <strong>Conciseness</strong> and <strong>Correctness</strong> are close cousins in this family.</p>
+
+    <h3>Lineage 3 — RAG metrics: RAGAS (2023) <span style="font-weight:400;font-size:.85rem;color:var(--ink-faint)">— the source of most names in your screenshot</span></h3>
+    <p class="meta-links">Es, James, Espinosa-Anke, Schockaert (Exploding Gradients) · "Ragas: Automated Evaluation of RAG" · EACL 2024 · <a href="https://arxiv.org/abs/2309.15217">arxiv.org/abs/2309.15217</a> · <a href="https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/">docs</a></p>
+    <p>RAGAS's key insight: a retrieval-augmented answer can fail at <strong>two independent stages</strong> — retrieval or generation — so you must measure them <em>separately</em>, or you'll never know which to fix. That decomposition is why these specific metrics exist:</p>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Metric</th><th>Stage</th><th>The question it answers</th><th>Score drops when…</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Context Recall</strong></td><td>Retrieval</td><td>Did we fetch <em>all</em> the info needed to answer?</td><td>needed documents weren't retrieved at all</td></tr>
+        <tr><td><strong>Context Precision</strong></td><td>Retrieval</td><td>Are the <em>relevant</em> chunks ranked at the top?</td><td>relevant chunks are buried under irrelevant ones</td></tr>
+        <tr><td><strong>Faithfulness</strong></td><td>Generation</td><td>Is every claim grounded in the retrieved context?</td><td>the model hallucinates beyond its sources</td></tr>
+        <tr><td><strong>Answer Relevance</strong></td><td>Generation</td><td>Does the answer actually address the question?</td><td>the answer rambles, pads, or dodges</td></tr>
+        <tr><td><strong>Answer Correctness</strong></td><td>End-to-end</td><td>Does the final answer match the known-correct one?</td><td>the answer is simply wrong (needs ground truth)</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p><strong>The confusable pair — Context Precision vs. Recall.</strong> <em>Recall</em> is anchored on what was <strong>needed</strong> (the reference answer): did retrieval capture it? It punishes <strong>missing evidence</strong>. <em>Precision</em> is anchored on what was <strong>retrieved and how it's ranked</strong>: is it relevant and well-ordered? It punishes <strong>noise</strong>. Same precision/recall idea as in the <span class="cterm" data-c="pr">Concepts drawer</span>, applied to retrieval. (Faithfulness = "don't say things the docs don't support" is essentially SummEval's <em>Consistency</em>, reborn for RAG.)</p>
+
+    <h3>Lineage 4 — Task &amp; agent-specific criteria</h3>
+    <p>As evaluation moved to agents and structured outputs, task-shaped criteria appeared — each is just "did it do <em>this specific job</em>?":</p>
+    <ul>
+      <li><strong>Goal Accuracy</strong> (RAGAS) — did the agent actually achieve the user's goal? Binary; compares the end state to the intended outcome.</li>
+      <li><strong>Topic Adherence</strong> (RAGAS) — did the agent stay within its allowed topics (and not wrongly refuse on-topic ones)? Scored as precision/recall/F1 over on-topic handling.</li>
+      <li><strong>SQL Semantic Equivalence</strong> — does the generated SQL return the <em>same rows</em> as the reference query? This is "execution accuracy," the standard from the <strong>Spider</strong> text-to-SQL benchmark (Yu et al. 2018, <a href="https://arxiv.org/abs/1809.08887">arxiv.org/abs/1809.08887</a>). It ignores surface differences (two queries that produce identical output are equivalent).</li>
+    </ul>
+
+    <h3>Quick reference — the criteria you'll actually use</h3>
+    <p>The most common evaluators from that library, in plain terms. All are scored 0–1 by an LLM judge (higher = better). The colored tag shows the family: <span class="fam fam-retr" style="font-size:9.5px;padding:2px 7px;border-radius:20px;font-family:var(--sans);font-weight:700;letter-spacing:.07em">retrieval</span> <span class="fam fam-gen" style="font-size:9.5px;padding:2px 7px;border-radius:20px;font-family:var(--sans);font-weight:700;letter-spacing:.07em">generation</span> <span class="fam fam-qual" style="font-size:9.5px;padding:2px 7px;border-radius:20px;font-family:var(--sans);font-weight:700;letter-spacing:.07em">overall quality</span> <span class="fam fam-task" style="font-size:9.5px;padding:2px 7px;border-radius:20px;font-family:var(--sans);font-weight:700;letter-spacing:.07em">agents &amp; tasks</span></p>
+
+    <div class="critcards">
+      <div class="critcard"><h5>Faithfulness <span class="fam fam-gen">generation</span></h5><p class="def">Are the answer's claims actually backed by the retrieved context? Your #1 hallucination guard.</p><div class="row"><span class="lab">Use when</span>Any grounded / RAG answer.</div><div class="row"><span class="lab">Low score →</span>The model is inventing facts beyond its sources — fix generation/grounding, not retrieval.</div></div>
+
+      <div class="critcard"><h5>Answer Relevance <span class="fam fam-gen">generation</span></h5><p class="def">Does the answer actually address the question — not padding or dodging? (Not about being correct.)</p><div class="row"><span class="lab">Use when</span>Any Q&amp;A or chat reply.</div><div class="row"><span class="lab">Low score →</span>The answer rambles, is incomplete, or drifts off-topic — fix the prompt.</div></div>
+
+      <div class="critcard"><h5>Context Recall <span class="fam fam-retr">retrieval</span></h5><p class="def">Did retrieval fetch <em>all</em> the info needed to answer? (Needs a ground-truth answer.)</p><div class="row"><span class="lab">Use when</span>Debugging retriever <em>coverage</em>.</div><div class="row"><span class="lab">Low score →</span>Needed documents were missed — better chunking, embeddings, or a bigger top-k.</div></div>
+
+      <div class="critcard"><h5>Context Precision <span class="fam fam-retr">retrieval</span></h5><p class="def">Are the relevant chunks ranked at the top, rather than buried in noise?</p><div class="row"><span class="lab">Use when</span>Tuning the retriever's <em>ranking</em>.</div><div class="row"><span class="lab">Low score →</span>Relevant docs are buried under junk — add or improve a reranker.</div></div>
+
+      <div class="critcard"><h5>Context Relevance <span class="fam fam-retr">retrieval</span></h5><p class="def">Are the retrieved chunks pertinent to the question at all?</p><div class="row"><span class="lab">Use when</span>A quick sanity check on the retriever.</div><div class="row"><span class="lab">Low score →</span>The retriever is pulling off-topic material entirely.</div></div>
+
+      <div class="critcard"><h5>Answer Correctness <span class="fam fam-qual">overall quality</span></h5><p class="def">Does the final answer match the known-correct answer?</p><div class="row"><span class="lab">Use when</span>Regression tests where you have gold answers.</div><div class="row"><span class="lab">Low score →</span>The answer is simply wrong — trace back to retrieval or generation.</div></div>
+
+      <div class="critcard"><h5>Correctness <span class="fam fam-qual">overall quality</span></h5><p class="def">Is the answer factually right? (General — not RAG-specific.)</p><div class="row"><span class="lab">Use when</span>Factual Q&amp;A with no retrieval step.</div><div class="row"><span class="lab">Low score →</span>Factually wrong, independent of style.</div></div>
+
+      <div class="critcard"><h5>Helpfulness <span class="fam fam-qual">overall quality</span></h5><p class="def">Does the response usefully serve the user's intent? (No reference needed.)</p><div class="row"><span class="lab">Use when</span>General assistant / chat quality.</div><div class="row"><span class="lab">Low score →</span>Unhelpful or evasive. Broad catch-all — pair it with sharper metrics.</div></div>
+
+      <div class="critcard"><h5>Conciseness <span class="fam fam-qual">overall quality</span></h5><p class="def">Is the answer appropriately brief, without padding?</p><div class="row"><span class="lab">Use when</span>Support bots, summaries — anywhere verbosity hurts.</div><div class="row"><span class="lab">Low score →</span>Wordy or padded. Warning: don't optimize alone or you'll punish necessary detail.</div></div>
+
+      <div class="critcard"><h5>Goal Accuracy <span class="fam fam-task">agents &amp; tasks</span></h5><p class="def">Did the agent achieve the user's actual goal?</p><div class="row"><span class="lab">Use when</span>Multi-step agents / tool use.</div><div class="row"><span class="lab">Low score →</span>The task wasn't accomplished — regardless of how nice the output reads.</div></div>
+
+      <div class="critcard"><h5>Topic Adherence <span class="fam fam-task">agents &amp; tasks</span></h5><p class="def">Did the agent stay within its allowed topics, without over-refusing?</p><div class="row"><span class="lab">Use when</span>Scoped assistants (e.g. a banking bot).</div><div class="row"><span class="lab">Low score →</span>It answered off-scope, or wrongly refused valid on-topic questions.</div></div>
+
+      <div class="critcard"><h5>SQL Semantic Equivalence <span class="fam fam-task">agents &amp; tasks</span></h5><p class="def">Does the generated SQL return the <em>same rows</em> as the reference query?</p><div class="row"><span class="lab">Use when</span>Text-to-SQL systems.</div><div class="row"><span class="lab">Low score →</span>The query returns wrong results — even if it looks plausible.</div></div>
+
+      <div class="critcard"><h5>Answer Critic <span class="fam fam-task">custom</span></h5><p class="def">A written critique of the answer against criteria — not just a number.</p><div class="row"><span class="lab">Use when</span>You want reasoned feedback to act on.</div><div class="row"><span class="lab">Low score →</span>Read the critique text itself, not only the score.</div></div>
+
+      <div class="critcard"><h5>Simple Criteria <span class="fam fam-task">custom</span></h5><p class="def">Score against a custom instruction / rubric <em>you</em> write.</p><div class="row"><span class="lab">Use when</span>Any bespoke criterion the built-ins don't cover.</div><div class="row"><span class="lab">Low score →</span>You define the scale — interpret per your own rubric.</div></div>
+    </div>
+    <p class="demo-note">Rule of thumb: pick the <strong>3–4</strong> that match your system (for RAG: Faithfulness + Answer Relevance + Context Recall + Context Precision) rather than chasing a single number — and remember pointwise numeric scores are noisy, so track trends, not decimals.</p>
+
+    <div class="demo" id="demo-rag">
+      <div class="demo-label">Try it — localize the failure</div>
+      <h4>Why one score isn't enough</h4>
+      <p>A RAG answer can break at different stages, and each broken part needs a different fix. Pick a symptom — see which metric catches it and where the bug actually lives. <em>That's</em> the whole reason these criteria are split out instead of collapsed into one "quality" number.</p>
+      <div class="rag-flow">
+        <div class="rag-stage" id="rag-retrieval"><div class="rag-name">1 · Retrieval</div><div class="rag-sub">fetch context</div></div>
+        <div class="rag-arrow">→</div>
+        <div class="rag-stage" id="rag-generation"><div class="rag-name">2 · Generation</div><div class="rag-sub">write answer</div></div>
+        <div class="rag-arrow">→</div>
+        <div class="rag-stage" id="rag-answer"><div class="rag-name">3 · Final answer</div><div class="rag-sub">vs. ground truth</div></div>
+      </div>
+      <div class="controls" id="rag-symptoms"></div>
+      <div id="rag-diagnosis" class="verdict"></div>
+    </div>
+
+    <!-- SCOREBOARD -->
+    <h2 id="scoreboard">The scoreboard — what worked vs. what was a dud</h2>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Technique / claim</th><th>Verdict</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>n-gram overlap (BLEU/ROUGE) for open-ended quality</td><td><span class="tag dud">Dud</span></td><td>Measures surface words, not meaning (fine for MT/summarization with references)</td></tr>
+        <tr><td>LLM-as-a-judge in principle</td><td><span class="tag win">Won</span></td><td>~80% human agreement ≈ human–human agreement</td></tr>
+        <tr><td>Chain-of-thought + explicit rubric before scoring</td><td><span class="tag win">Won</span></td><td>Reliably improves judge accuracy (G-Eval)</td></tr>
+        <tr><td>Absolute 1–10 pointwise scoring</td><td><span class="tag dud">Weak</span></td><td>Noisy, clusters at 7–8, poorly calibrated</td></tr>
+        <tr><td>Pairwise "A vs B" comparison</td><td><span class="tag win">Won</span></td><td>Far more reliable than absolute scores</td></tr>
+        <tr><td>Ignoring position bias</td><td><span class="tag dud">Dud</span></td><td>Fix: swap order and average</td></tr>
+        <tr><td>Ignoring verbosity/length bias</td><td><span class="tag dud">Dud</span></td><td>Fix: length control (LC-AlpacaEval)</td></tr>
+        <tr><td>Single judge from one model family</td><td><span class="tag mixed">Risky</span></td><td>Self-preference bias is real and measurable</td></tr>
+        <tr><td>Panel of diverse judges (PoLL)</td><td><span class="tag win">Won</span></td><td>Better <em>and</em> cheaper; cancels self-preference</td></tr>
+        <tr><td>Fine-tuned open judges (Prometheus/JudgeLM/…)</td><td><span class="tag mixed">Mixed</span></td><td>Great in-domain; generalize worse than frontier judges</td></tr>
+        <tr><td>Trusting a judge you never audited</td><td><span class="tag dud">Dud</span></td><td>Meta-eval (RewardBench) is not optional</td></tr>
+        <tr><td>One number = "quality"</td><td><span class="tag dud">Dud</span></td><td>Quality is multi-axis (HELM)</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <!-- ORDER -->
+    <h2 id="order">Suggested reading order (if you do open any originals)</h2>
+    <ul>
+      <li><strong>MT-Bench/Chatbot Arena judge paper (#4)</strong> — the foundation; read fully.</li>
+      <li><strong>G-Eval (#3)</strong> — how to actually prompt a judge.</li>
+      <li>Skim <strong>one survey (#13)</strong> to get the map.</li>
+      <li><strong>PoLL (#11)</strong> + <strong>self-preference (#8)</strong> — the bias→fix pair that best shows the field's mature thinking.</li>
+      <li><strong>Length-Controlled AlpacaEval (#6)</strong> — the cleanest "measure and subtract a bias" example.</li>
+      <li><strong>RewardBench (#12)</strong> — meta-evaluation and the RLHF connection.</li>
+    </ul>
+    <p>Everything else you can treat as reference — you now have the concept and the verdict for each.</p>
+
+    <!-- GLOSSARY -->
+    <h2 id="glossary">A newcomer's glossary</h2>
+    <ul>
+      <li><strong>Pointwise vs. pairwise</strong> — scoring one answer in isolation vs. comparing two. Pairwise is more reliable.</li>
+      <li><strong>Reference-based vs. reference-free</strong> — comparing to a gold answer vs. judging on quality alone. LLM judges enabled reliable reference-free eval.</li>
+      <li><strong>Rubric / criteria</strong> — the explicit standard you hand the judge ("grade on factual accuracy, then clarity"). Rubrics sharply improve judges.</li>
+      <li><strong>Elo / Bradley-Terry</strong> — the math that turns pairwise votes into a single ranking (from chess).</li>
+      <li><strong>Reward model</strong> — a judge used as a <em>training</em> signal in RLHF rather than for reporting. Same skill, different job.</li>
+      <li><strong>Meta-evaluation</strong> — evaluating the evaluator. Do this before trusting any judge.</li>
+      <li><strong>RLHF / RLAIF</strong> — training from human / AI feedback. See Constitutional AI (Bai et al. 2022, <a href="https://arxiv.org/abs/2212.08073">arxiv.org/abs/2212.08073</a>), the origin of using AI, not humans, to generate preference labels.</li>
+    </ul>
+
+    <hr>
+    <p class="footnote">Note on currency: this reflects the literature through roughly late 2024–2025. The active frontier as of 2026 is generative/critique reward models and rubric-/verifier-based evaluation for reasoning models (RLVR) — verify the latest before relying on it.</p>
+  </main>
+</div>
+
+<button class="concept-fab" id="concept-fab">&#128218; Concepts</button>
+<div class="overlay" id="concept-overlay"></div>
+<aside class="drawer" id="concept-drawer" aria-label="Concept glossary">
+  <div class="drawer-head">
+    <h3>Concepts, explained simply</h3>
+    <button class="drawer-close" id="drawer-close" aria-label="Close">&times;</button>
+  </div>
+  <div class="drawer-body">
+
+    <div class="concept" id="c-spearman">
+      <h4>Spearman correlation</h4>
+      <p>Measures whether two <em>rankings</em> agree. It ignores the exact scores and looks only at the <strong>order</strong>. Runs from +1 (identical order), through 0 (no relation), to &minus;1 (reversed). It's the usual way to ask "does this judge <em>rank</em> answers the way humans do?"</p>
+      <div class="eg">
+        <b>Example.</b> Three essays, ranked by a human and by a judge:
+        <table>
+          <tr><th>Essay</th><th>Human</th><th>Judge</th></tr>
+          <tr><td>E1</td><td>1st</td><td>1st</td></tr>
+          <tr><td>E2</td><td>2nd</td><td>3rd</td></tr>
+          <tr><td>E3</td><td>3rd</td><td>2nd</td></tr>
+        </table>
+        They agree on the best one but swap the other two &rarr; Spearman &asymp; <b>0.5</b>. That's exactly what G-Eval's <b>0.514</b> means: <b>moderate</b> — mostly the same order, but not always.
+      </div>
+    </div>
+
+    <div class="concept" id="c-pr">
+      <h4>Precision &amp; recall</h4>
+      <p><b>Precision:</b> of what you produced, how much was correct. <b>Recall:</b> of what was expected, how much did you capture. BLEU leans on precision (don't say wrong things); ROUGE leans on recall (don't miss things).</p>
+      <div class="eg">
+        <b>Example.</b> A reference summary has <b>4</b> key points. Your summary makes <b>3</b> points, of which <b>2</b> are correct.<br>
+        Precision = 2/3 (67%) · Recall = 2/4 (50%).
+      </div>
+    </div>
+
+    <div class="concept" id="c-ngram">
+      <h4>n-gram</h4>
+      <p>A run of <em>n</em> consecutive words. It's the unit BLEU and ROUGE count when checking overlap with a reference.</p>
+      <div class="eg">
+        <b>Example.</b> "the cat sat" &rarr;<br>
+        <b>unigrams</b> (1): the · cat · sat<br>
+        <b>bigrams</b> (2): "the cat" · "cat sat"
+      </div>
+    </div>
+
+    <div class="concept" id="c-cot">
+      <h4>Chain-of-thought before scoring</h4>
+      <p>Make the judge <strong>write out its reasoning first</strong>, then give the score — instead of blurting a number. It tends to reason more carefully, and you can <em>audit why</em> it scored something. This is one of the two ideas from G-Eval that stuck.</p>
+      <div class="eg">
+        <b>Straight to a number:</b> "8/10." (Why? No idea — and it might say 6 next time.)<br><br>
+        <b>Reason first:</b> "Relevance: partial. Correctness: weak — it hides the bug. Completeness: missing root-cause. &rarr; <b>3/10</b>." Same judge, far more trustworthy and repeatable. (Try the demo in entry #3.)
+      </div>
+    </div>
+
+    <div class="concept" id="c-rubric">
+      <h4>Explicit rubric</h4>
+      <p>An <strong>up-front checklist of criteria, each worth points</strong>, that you hand the judge. It converts a vague "is this good?" into "does it meet criteria 1–4?" — so the score is repeatable and <em>auditable</em> (two runs, or two judges, land in the same place). The other idea from G-Eval that stuck.</p>
+      <div class="eg">
+        <b>Example rubric</b> for a bug-fix answer:<br>
+        States the correct fix (+3) · Explains the root cause (+3) · Notes side effects (+2) · Clear &amp; concise (+2) = <b>/10</b>.<br>
+        Without it you get a hand-wavy "7" that won't reproduce. (Try the demo in entry #9.)
+      </div>
+    </div>
+
+    <div class="concept" id="c-elo">
+      <h4>Elo &amp; Bradley-Terry</h4>
+      <p>A way to turn many <em>win/loss</em> results into a single rating. Beating a strong opponent earns more points than beating a weak one; each rating just updates after every match. <b>Bradley-Terry</b> is the underlying probability model; <b>Elo</b> is the running-update version borrowed from chess.</p>
+      <div class="eg">
+        <b>Example.</b> Two models tied at 1000. The <em>underdog</em> wins &rarr; it gains a lot (say +20) and the favorite loses the same, because the result was surprising. If the favorite had won, ratings would barely move. (See the Elo demo in entry #5.)
+      </div>
+    </div>
+
+    <div class="concept" id="c-hha">
+      <h4>Human&ndash;human agreement</h4>
+      <p>How often <em>two independent humans</em> give the same judgment. It sets the <strong>ceiling</strong>: if humans only agree with each other ~80% of the time, then an LLM judge that agrees with humans ~80% of the time is essentially <em>at the human level</em> — you can't reasonably ask for more.</p>
+      <div class="eg">
+        <b>Why it matters.</b> "80% agreement" sounds mediocre until you learn humans hit the same 80% with each other. That framing is what made LLM judges credible (MT-Bench, entry #4).
+      </div>
+    </div>
+
+    <div class="concept" id="c-calibration">
+      <h4>Calibration</h4>
+      <p>Does a model's <em>confidence</em> match reality? A well-calibrated model that says "80% sure" is right about 80% of the time. A model can be <strong>accurate but poorly calibrated</strong> (confidently wrong) — which matters a lot for a judge.</p>
+      <div class="eg">
+        <b>Example.</b> Across all the cases where a judge said it was "90% confident," it turned out to be right only 60% of the time &rarr; overconfident, i.e. poorly calibrated.
+      </div>
+    </div>
+
+    <div class="concept" id="c-confounder">
+      <h4>Confounder</h4>
+      <p>A <strong>hidden variable that sneaks into a comparison and distorts it.</strong> You think you're measuring one thing, but something else is moving the result.</p>
+      <div class="eg">
+        <b>Example.</b> In verbosity bias, <em>length</em> is a confounder: longer answers win, so you <em>think</em> you're measuring quality but you're partly just measuring length. (Length-controlled AlpacaEval removes it — entry #6.)
+      </div>
+    </div>
+
+    <div class="concept" id="c-regression">
+      <h4>Regression (statistical)</h4>
+      <p>A tool that models how an outcome depends on several inputs, letting you <strong>"hold one input constant"</strong> and ask a what-if question.</p>
+      <div class="eg">
+        <b>Example.</b> Length-controlled AlpacaEval fits a regression of win-rate on answer length, then asks: "<em>what would the win-rate be if both answers were the same length?</em>" — mathematically subtracting the length effect.
+      </div>
+    </div>
+
+    <div class="concept" id="c-ood">
+      <h4>Out-of-distribution (OOD)</h4>
+      <p>Data that looks <strong>unlike what a model was trained on</strong>. Performance usually drops — sometimes sharply. It's the core reason a fine-tuned judge can be excellent on its home task and shaky elsewhere.</p>
+      <div class="eg">
+        <b>Example.</b> A judge fine-tuned to grade <em>chat replies</em> is asked to grade <em>code</em>. Code is out-of-distribution for it, so its accuracy falls — while a general frontier judge holds up. (See entry #10.)
+      </div>
+    </div>
+
+    <div class="concept" id="c-pairwise">
+      <h4>Pointwise vs. pairwise</h4>
+      <p><b>Pointwise:</b> score one answer alone (e.g. "rate this 7/10"). <b>Pairwise:</b> compare two and say which is better. Pairwise is far more reliable — models (and people) are much better at "which is better?" than at pinning an absolute number.</p>
+      <div class="eg">
+        <b>Example.</b> Ask for absolute scores and everything clumps at 7–8. Ask "A or B?" across pairs and a clean ranking falls out. (See the pointwise-vs-pairwise demo in entry #5.)
+      </div>
+    </div>
+
+  </div>
+</aside>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ---------- Demo A: BLEU blind spot ---------- */
+  (function () {
+    var ref = "The cat sat on the warm mat.";
+    var refSet = {};
+    ref.toLowerCase().replace(/[.,]/g, "").split(/\s+/).forEach(function (w) { refSet[w] = true; });
+    var cands = {
+      para:  { text: "A feline rested upon the cozy rug.", meaning: "meaning preserved perfectly", bad: true },
+      salad: { text: "The mat sat on the cat.",            meaning: "meaning is nonsense",         bad: false }
+    };
+    var candEl = $("bleu-cand"), barEl = $("bleu-bar"), pctEl = $("bleu-pct"), vEl = $("bleu-verdict");
+    function show(key) {
+      var c = cands[key];
+      var words = c.text.split(/\s+/), matches = 0, html = "";
+      words.forEach(function (w) {
+        var clean = w.toLowerCase().replace(/[.,]/g, "");
+        var hit = refSet[clean];
+        if (hit) matches++;
+        html += '<span class="tok' + (hit ? " match" : "") + '">' + w + "</span> ";
+      });
+      candEl.innerHTML = html;
+      var pct = Math.round((matches / words.length) * 100);
+      pctEl.textContent = pct + "%";
+      barEl.className = c.bad ? "bad" : "good";
+      requestAnimationFrame(function () { barEl.style.width = pct + "%"; });
+      vEl.innerHTML = key === "para"
+        ? "&#9989; Meaning: <strong>" + c.meaning + "</strong>. Score: <strong>terrible</strong> (" + pct + "%). The metric punishes the good answer."
+        : "&#10060; Meaning: <strong>" + c.meaning + "</strong>. Score: <strong>perfect</strong> (" + pct + "%). The metric rewards the bad one.";
+    }
+    document.querySelectorAll("#demo-bleu [data-cand]").forEach(function (b) {
+      b.addEventListener("click", function () { show(b.getAttribute("data-cand")); });
+    });
+    show("para");
+  })();
+
+  /* ---------- Demo B: Position bias ---------- */
+  (function () {
+    var slotA = $("pos-slotA"), slotB = $("pos-slotB"), v = $("pos-verdict"), cnt = $("pos-count");
+    var answers = ["Answer α", "Answer β"]; // index 0 currently in slot A
+    var order = [0, 1], swaps = 0;
+    function render() {
+      slotA.querySelector(".who").textContent = answers[order[0]];
+      slotB.querySelector(".who").textContent = answers[order[1]];
+      slotA.classList.add("win"); slotB.classList.remove("win");
+      v.innerHTML = "&#127942; Winner: <strong>" + answers[order[0]] + "</strong> — but only because it's in the first slot.";
+      if (swaps > 0) cnt.innerHTML = "You've swapped <strong>" + swaps + "</strong> time" + (swaps > 1 ? "s" : "") +
+        ". The winner flipped every time, yet the answers never changed. The real fix: score both orders and average.";
+    }
+    $("pos-swap").addEventListener("click", function () { order.reverse(); swaps++; render(); });
+    render();
+  })();
+
+  /* ---------- Demo C: Verbosity bias ---------- */
+  (function () {
+    var slider = $("verb-slider"), q = $("verb-quality"), j = $("verb-judge");
+    var qv = $("verb-qv"), jv = $("verb-jv"), prev = $("verb-preview");
+    var base = "Restart the service to clear the stuck cache.";
+    var fillers = [
+      " Generally speaking, this is worth keeping in mind.",
+      " As a rule of thumb, it applies in most situations.",
+      " That said, of course, context can always vary somewhat.",
+      " In practice, many teams end up doing exactly this.",
+      " All things considered, it is a perfectly sensible default.",
+      " It goes without saying that your mileage may differ."
+    ];
+    var QUALITY = 58;
+    function update() {
+      var pad = +slider.value;
+      var judge = Math.min(96, QUALITY + pad * 0.38);
+      q.style.width = QUALITY + "%"; qv.textContent = QUALITY + "%";
+      j.style.width = judge + "%"; jv.textContent = Math.round(judge) + "%";
+      var reps = Math.round(pad / 100 * fillers.length);
+      prev.textContent = "“" + base + fillers.slice(0, reps).join("") + "”";
+    }
+    slider.addEventListener("input", update);
+    update();
+  })();
+
+  /* ---------- Demo D: Pointwise vs pairwise ---------- */
+  (function () {
+    var track = $("score-track"), cap = $("score-caption");
+    // true quality rank 1..6 (worst..best)
+    var items = [
+      { id: "A1", label: "Weak" }, { id: "A2", label: "Poor" }, { id: "A3", label: "OK" },
+      { id: "A4", label: "Good" }, { id: "A5", label: "Strong" }, { id: "A6", label: "Excellent" }
+    ];
+    var colors = ["#b6543a", "#bf7233", "#c39a3a", "#8a9a3c", "#5a8a4a", "#2f6b3d"];
+    // build ticks + chips once
+    track.innerHTML = "";
+    for (var t = 1; t <= 10; t++) {
+      var tk = document.createElement("div"); tk.className = "tick";
+      tk.style.left = ((t - 1) / 9 * 100) + "%"; tk.textContent = t; track.appendChild(tk);
+    }
+    var chips = items.map(function (it, i) {
+      var c = document.createElement("div"); c.className = "chip";
+      c.textContent = it.id; c.title = it.id + " — true quality: " + it.label;
+      c.style.background = colors[i]; c.style.left = "0%"; c.style.bottom = "6px";
+      track.appendChild(c); return c;
+    });
+    function place(scoreOf, bottomOf) {
+      chips.forEach(function (c, i) {
+        c.style.left = ((scoreOf(i) - 1) / 9 * 100) + "%";
+        c.style.bottom = bottomOf(i) + "px";
+      });
+    }
+    $("score-point").addEventListener("click", function () {
+      var pts = [7.1, 7.4, 7.2, 7.9, 7.6, 8.0]; // all clumped 7-8
+      place(function (i) { return pts[i]; }, function (i) { return 6 + (i % 3) * 20; });
+      cap.innerHTML = "Every answer scored <strong>7–8</strong>. The judge can't separate <em>Weak</em> from <em>Excellent</em> — absolute scores collapse into a narrow band.";
+    });
+    $("score-pair").addEventListener("click", function () {
+      place(function (i) { return 2 + i * 1.5; }, function () { return 6; });
+      cap.innerHTML = "By asking <em>“which is better?”</em> the six answers spread into a <strong>clean order</strong> — weak on the left, excellent on the right.";
+    });
+    $("score-reset").addEventListener("click", function () {
+      place(function () { return 1; }, function (i) { return 6 + i * 9; });
+      cap.textContent = "";
+    });
+    place(function () { return 1; }, function (i) { return 6 + i * 9; });
+  })();
+
+  /* ---------- Demo E: Elo ---------- */
+  (function () {
+    var box = $("elo-bars"), status = $("elo-status");
+    var truth = { A: 0.80, B: 0.52, C: 0.28 };
+    var names = ["A", "B", "C"], ratings, timer;
+    var rows = {};
+    function build() {
+      box.innerHTML = ""; rows = {};
+      names.forEach(function (n) {
+        var row = document.createElement("div"); row.className = "elo-row";
+        row.innerHTML = '<div class="lbl">Model ' + n + '</div>' +
+          '<div class="meter"><span></span></div><div class="num"></div>';
+        box.appendChild(row);
+        rows[n] = { row: row, bar: row.querySelector("span"), num: row.querySelector(".num") };
+      });
+    }
+    function draw() {
+      var sorted = names.slice().sort(function (a, b) { return ratings[b] - ratings[a]; });
+      sorted.forEach(function (n) { box.appendChild(rows[n].row); });
+      names.forEach(function (n) {
+        var w = Math.max(2, Math.min(100, (ratings[n] - 850) / (1250 - 850) * 100));
+        rows[n].bar.style.width = w + "%";
+        rows[n].num.textContent = Math.round(ratings[n]);
+      });
+    }
+    function reset() {
+      if (timer) clearInterval(timer);
+      ratings = { A: 1000, B: 1000, C: 1000 }; build(); draw();
+      status.innerHTML = "Hidden truth: A is strongest, then B, then C. The ratings don't know that — they only see match outcomes.";
+    }
+    function play() {
+      if (timer) clearInterval(timer);
+      var n = 0;
+      timer = setInterval(function () {
+        var i = Math.floor(Math.random() * 3), j;
+        do { j = Math.floor(Math.random() * 3); } while (j === i);
+        var a = names[i], b = names[j];
+        var pa = truth[a] / (truth[a] + truth[b]);
+        var aWins = Math.random() < pa ? 1 : 0;
+        var ea = 1 / (1 + Math.pow(10, (ratings[b] - ratings[a]) / 400));
+        ratings[a] += 24 * (aWins - ea);
+        ratings[b] += 24 * ((1 - aWins) - (1 - ea));
+        draw();
+        if (++n >= 40) { clearInterval(timer);
+          status.innerHTML = "After 40 matches the order has settled to <strong>A &gt; B &gt; C</strong> — recovered purely from noisy pairwise votes."; }
+      }, 130);
+    }
+    $("elo-play").addEventListener("click", play);
+    $("elo-reset").addEventListener("click", reset);
+    reset();
+  })();
+
+  /* ---------- Demo F: Jury vs single judge ---------- */
+  (function () {
+    var seatsEl = $("jury-seats"), tally = $("jury-tally");
+    // first is the biased same-family judge (votes A, wrong); rest are diverse jurors
+    var jurors = [
+      { face: "⚖️", vote: "A", biased: true },
+      { face: "🤖", vote: "B" }, { face: "🧠", vote: "B" },
+      { face: "🔍", vote: "A" }, { face: "📚", vote: "B" },
+      { face: "🧮", vote: "B" }, { face: "🎯", vote: "B" }
+    ];
+    var shown = 1;
+    function render() {
+      seatsEl.innerHTML = "";
+      var a = 0, b = 0;
+      for (var i = 0; i < shown; i++) {
+        var jr = jurors[i];
+        if (jr.vote === "A") a++; else b++;
+        var s = document.createElement("div");
+        s.className = "seat vote" + jr.vote + (jr.biased ? " biased" : "");
+        s.innerHTML = '<div class="face">' + jr.face + '</div>' +
+          '<div class="vote">votes ' + jr.vote + '</div>' +
+          '<div>' + (jr.biased ? "biased judge" : "juror " + i) + '</div>';
+        seatsEl.appendChild(s);
+      }
+      var winner = a > b ? "A" : b > a ? "B" : "tie";
+      if (winner === "B")
+        tally.innerHTML = "Panel majority: <strong>B</strong> (" + b + "–" + a + ") &#9989; the diverse jury reached the right answer.";
+      else if (winner === "A")
+        tally.innerHTML = "Panel majority: <strong>A</strong> (" + a + "–" + b + ") &#10060; the lone biased judge still dominates — add jurors.";
+      else
+        tally.innerHTML = "Split decision (" + a + "–" + b + ") — add one more juror to break the tie.";
+    }
+    $("jury-add").addEventListener("click", function () { if (shown < jurors.length) { shown++; render(); } });
+    $("jury-reset").addEventListener("click", function () { shown = 1; render(); });
+    render();
+  })();
+
+  var raf = function (fn) { requestAnimationFrame(function () { requestAnimationFrame(fn); }); };
+
+  /* ---------- Demo #2: BERTScore semantic vs surface ---------- */
+  (function () {
+    var data = {
+      para:  { text: "A feline rested upon the cozy rug.", surface: 14, meaning: 88 },
+      salad: { text: "The mat sat on the cat.",            surface: 100, meaning: 41 }
+    };
+    var cand = $("bert-cand"), sbar = $("bert-sbar"), mbar = $("bert-mbar");
+    var sv = $("bert-s"), mv = $("bert-m"), v = $("bert-verdict");
+    if (!cand) return;
+    function show(k) {
+      var d = data[k];
+      cand.textContent = "“" + d.text + "”";
+      sv.textContent = d.surface + "%"; mv.textContent = d.meaning + "%";
+      sbar.style.width = "0"; mbar.style.width = "0";
+      raf(function () { sbar.style.width = d.surface + "%"; mbar.style.width = d.meaning + "%"; });
+      v.innerHTML = k === "para"
+        ? "The old metric calls this a <strong>fail</strong>; BERTScore correctly sees the meaning is <strong>intact</strong>."
+        : "The old metric calls this <strong>perfect</strong>; BERTScore correctly sees the meaning is <strong>broken</strong>.";
+    }
+    document.querySelectorAll("#demo-bert [data-b]").forEach(function (b) {
+      b.addEventListener("click", function () { show(b.getAttribute("data-b")); });
+    });
+    show("para");
+  })();
+
+  /* ---------- Demo #3: G-Eval reason-then-score ---------- */
+  (function () {
+    var out = $("geval-out"); if (!out) return;
+    $("geval-direct").addEventListener("click", function () {
+      out.innerHTML = '<div class="bigscore">8 / 10</div>' +
+        '<div class="demo-note">No reasoning shown. Ask again and you might get a 6, or a 9 — arbitrary, unstable, and impossible to audit.</div>';
+    });
+    $("geval-cot").addEventListener("click", function () {
+      var steps = [
+        ["Relevance", "addresses a symptom, not the leak itself — partial."],
+        ["Correctness", "restarting hides the bug; the leak is still there — weak."],
+        ["Completeness", "no profiling, no heap snapshot, no root-cause step — missing."],
+        ["→ Final score", "3 / 10 — and every part of that number is justified."]
+      ];
+      out.innerHTML = '<div class="steps"></div>';
+      var box = out.querySelector(".steps");
+      steps.forEach(function (s, i) {
+        var el = document.createElement("div"); el.className = "step";
+        el.innerHTML = '<span class="k">' + s[0] + ':</span> ' + s[1];
+        box.appendChild(el);
+        setTimeout(function () { el.classList.add("show"); }, 350 * (i + 1));
+      });
+    });
+  })();
+
+  /* ---------- Demo #6: Length control ---------- */
+  (function () {
+    var terse = $("lc-terse"), verb = $("lc-verb"), tn = $("lc-tn"), vn = $("lc-vn"), cap = $("lc-cap");
+    if (!terse) return;
+    function set(t, vv, msg) {
+      terse.style.width = t + "%"; verb.style.width = vv + "%";
+      tn.textContent = t + "%"; vn.textContent = vv + "%"; cap.innerHTML = msg;
+    }
+    $("lc-apply").addEventListener("click", function () {
+      set(50, 50, "Once length is controlled for, the win-rate is <strong>50/50</strong> — the advantage was <em>only</em> the extra words.");
+    });
+    $("lc-reset").addEventListener("click", function () {
+      set(36, 64, "Raw judge: <strong>Verbose wins 64%</strong> — despite equal quality, just for being longer.");
+    });
+    set(36, 64, "Raw judge: <strong>Verbose wins 64%</strong> — despite equal quality, just for being longer.");
+  })();
+
+  /* ---------- Demo #7: Arena-Hard difficulty ---------- */
+  (function () {
+    var box = $("hard-bars"), cap = $("hard-cap"); if (!box) return;
+    var models = ["Model A", "Model B", "Model C"];
+    box.innerHTML = models.map(function (m) {
+      return '<div class="axis-row"><div class="lbl">' + m + '</div>' +
+        '<div class="meter"><span></span></div><div class="num"></div></div>';
+    }).join("");
+    var rows = box.querySelectorAll(".axis-row");
+    function set(vals, msg) {
+      rows.forEach(function (r, i) {
+        r.querySelector("span").style.width = vals[i] + "%";
+        r.querySelector(".num").textContent = vals[i] + "%";
+      });
+      cap.innerHTML = msg;
+    }
+    $("hard-easy").addEventListener("click", function () {
+      set([96, 94, 92], "Easy set: everyone scores ~95%. You <strong>can't tell them apart</strong> — the benchmark is saturated.");
+    });
+    $("hard-hard").addEventListener("click", function () {
+      set([84, 58, 37], "Hard set: scores <strong>spread wide</strong>. Now A is clearly ahead of B, and B ahead of C.");
+    });
+    set([96, 94, 92], "Easy set: everyone scores ~95%. You <strong>can't tell them apart</strong> — the benchmark is saturated.");
+  })();
+
+  /* ---------- Demo #8: Self-preference ---------- */
+  (function () {
+    var Aw = $("self-Aw"), Bw = $("self-Bw"), As = $("self-As"), Bs = $("self-Bs");
+    var A = $("self-A"), B = $("self-B"), cap = $("self-cap"); if (!Aw) return;
+    var base = 60, boost = 14, authorA = true;
+    function render() {
+      Aw.textContent = authorA ? "written by Model X" : "written by someone else";
+      Bw.textContent = authorA ? "written by someone else" : "written by Model X";
+      var sa = base + (authorA ? boost : 0), sb = base + (authorA ? 0 : boost);
+      As.textContent = "score " + sa; Bs.textContent = "score " + sb;
+      A.classList.toggle("win", sa >= sb); B.classList.toggle("win", sb > sa);
+      cap.innerHTML = "Model X favors <strong>Answer " + (authorA ? "A" : "B") + "</strong> (" +
+        Math.max(sa, sb) + " vs " + Math.min(sa, sb) + ") — purely because it wrote it.";
+    }
+    $("self-toggle").addEventListener("click", function () { authorA = !authorA; render(); });
+    render();
+  })();
+
+  /* ---------- Demo #9: Rubric ---------- */
+  (function () {
+    var list = $("rubric-list"), bar = $("rubric-bar"), sc = $("rubric-score"); if (!list) return;
+    var crit = [
+      { t: "States the correct fix", p: 3, on: true },
+      { t: "Explains the root cause", p: 3, on: true },
+      { t: "Notes side effects / caveats", p: 2, on: false },
+      { t: "Clear and concise", p: 2, on: true }
+    ];
+    function draw() {
+      var total = 0;
+      crit.forEach(function (c) { if (c.on) total += c.p; });
+      sc.textContent = total + " / 10";
+      bar.style.width = (total * 10) + "%";
+    }
+    list.innerHTML = "";
+    crit.forEach(function (c, i) {
+      var li = document.createElement("li");
+      li.className = c.on ? "on" : "";
+      li.innerHTML = '<span class="box">' + (c.on ? "&#10003;" : "") + '</span>' +
+        '<span>' + c.t + '</span><span class="pts">+' + c.p + '</span>';
+      li.addEventListener("click", function () {
+        c.on = !c.on; li.classList.toggle("on", c.on);
+        li.querySelector(".box").innerHTML = c.on ? "&#10003;" : ""; draw();
+      });
+      list.appendChild(li);
+    });
+    draw();
+  })();
+
+  /* ---------- Demo #10: Generalization ---------- */
+  (function () {
+    var box = $("gen-bars"), cap = $("gen-cap"); if (!box) return;
+    var labels = ["Fine-tuned judge", "Frontier judge"];
+    box.innerHTML = labels.map(function (m) {
+      return '<div class="axis-row"><div class="lbl" style="width:130px">' + m + '</div>' +
+        '<div class="meter"><span></span></div><div class="num"></div></div>';
+    }).join("");
+    var rows = box.querySelectorAll(".axis-row");
+    function set(vals, msg) {
+      rows.forEach(function (r, i) {
+        r.querySelector("span").style.width = vals[i] + "%";
+        r.querySelector("span").className = vals[i] >= 80 ? "good" : (vals[i] < 65 ? "bad" : "");
+        r.querySelector(".num").textContent = vals[i] + "%";
+      });
+      cap.innerHTML = msg;
+    }
+    $("gen-in").addEventListener("click", function () {
+      set([92, 87], "On its home turf the <strong>specialist wins</strong> (92% vs 87%).");
+    });
+    $("gen-out").addEventListener("click", function () {
+      set([60, 84], "On a new task the specialist <strong>collapses to 60%</strong>; the generalist holds at 84%.");
+    });
+    set([92, 87], "On its home turf the <strong>specialist wins</strong> (92% vs 87%).");
+  })();
+
+  /* ---------- Demo #12: RewardBench meta-eval ---------- */
+  (function () {
+    var box = $("rb-cases"), cap = $("rb-cap"); if (!box) return;
+    var cases = [
+      { t: "Helpful answer vs. evasive non-answer", correct: true },
+      { t: "Concise correct answer vs. long wrong one", correct: true },
+      { t: "Answer with a subtle math error vs. the correct one", correct: false },
+      { t: "Safe refusal vs. harmful compliance", correct: true }
+    ];
+    box.innerHTML = cases.map(function (c, i) {
+      return '<div class="rb-case" id="rb-' + i + '"><div class="mark">?</div><div>' + c.t + '</div></div>';
+    }).join("");
+    cap.innerHTML = "The judge hasn't been graded yet. Run it to find out whether you can trust it.";
+    $("rb-run").addEventListener("click", function () {
+      var right = 0;
+      cases.forEach(function (c, i) {
+        setTimeout(function () {
+          var el = $("rb-" + i);
+          el.classList.add(c.correct ? "ok" : "no");
+          el.querySelector(".mark").innerHTML = c.correct ? "&#10003;" : "&#10007;";
+          if (c.correct) right++;
+          if (i === cases.length - 1) setTimeout(function () {
+            cap.innerHTML = "This judge scored <strong>75%</strong> (3 / 4) — it was fooled by the confident-sounding math error. Good enough for some tasks, not others. <strong>You only know because you measured it.</strong>";
+          }, 300);
+        }, 400 * (i + 1));
+      });
+    });
+    $("rb-reset").addEventListener("click", function () {
+      cases.forEach(function (c, i) {
+        var el = $("rb-" + i); el.className = "rb-case"; el.querySelector(".mark").innerHTML = "?";
+      });
+      cap.innerHTML = "The judge hasn't been graded yet. Run it to find out whether you can trust it.";
+    });
+  })();
+
+  /* ---------- Demo #14: HELM multi-axis ---------- */
+  (function () {
+    var box = $("helm-bars"), cap = $("helm-cap"); if (!box) return;
+    var axes = ["Accuracy", "Calibration", "Robustness", "Safety", "Efficiency"];
+    var P = { Accuracy: 88, Calibration: 70, Robustness: 65, Safety: 68, Efficiency: 55 };
+    var Q = { Accuracy: 79, Calibration: 74, Robustness: 72, Safety: 90, Efficiency: 85 };
+    box.innerHTML = axes.map(function (a) {
+      return '<div class="axis-block" data-axis="' + a + '" style="margin:.7rem 0">' +
+        '<div style="font-size:13px;font-weight:600;margin-bottom:.2rem">' + a + '</div>' +
+        '<div class="mini"><span class="tag2">Model P</span><div class="meter"><span style="background:var(--accent)"></span></div><span class="num"></span></div>' +
+        '<div class="mini"><span class="tag2">Model Q</span><div class="meter"><span class="good"></span></div><span class="num"></span></div>' +
+        '</div>';
+    }).join("");
+    box.querySelectorAll(".axis-block").forEach(function (blk) {
+      var a = blk.getAttribute("data-axis");
+      var minis = blk.querySelectorAll(".mini");
+      minis[0].querySelector("span.num").textContent = P[a];
+      minis[1].querySelector("span.num").textContent = Q[a];
+      raf(function () {
+        minis[0].querySelector(".meter span").style.width = P[a] + "%";
+        minis[1].querySelector(".meter span").style.width = Q[a] + "%";
+      });
+    });
+    document.querySelectorAll("#demo-helm [data-axis]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var a = b.getAttribute("data-axis");
+        box.querySelectorAll(".axis-block").forEach(function (blk) {
+          blk.style.opacity = blk.getAttribute("data-axis") === a ? "1" : ".38";
+        });
+        var winner = P[a] > Q[a] ? "P" : "Q";
+        cap.innerHTML = "By <strong>" + a + "</strong>, the winner is <strong>Model " + winner + "</strong> (" +
+          Math.max(P[a], Q[a]) + " vs " + Math.min(P[a], Q[a]) + "). Change the axis and the winner changes.";
+      });
+    });
+    cap.innerHTML = "Pick an axis above — notice that <strong>no single model wins them all.</strong>";
+  })();
+
+  /* ---------- RAG failure localizer ---------- */
+  (function () {
+    var box = $("rag-symptoms"), diag = $("rag-diagnosis"); if (!box) return;
+    var stages = { retrieval: $("rag-retrieval"), generation: $("rag-generation"), answer: $("rag-answer") };
+    var symptoms = [
+      { t: "The facts needed to answer were never retrieved", stage: "retrieval", metric: "Context Recall",
+        fix: "improve retrieval coverage — chunking, embeddings, or a bigger top-k" },
+      { t: "Relevant chunks were retrieved but buried under junk", stage: "retrieval", metric: "Context Precision",
+        fix: "improve ranking — add a reranker or better scoring" },
+      { t: "The answer states facts that aren't in the retrieved context", stage: "generation", metric: "Faithfulness",
+        fix: "the generator is hallucinating — tighten the grounding prompt, not the retriever" },
+      { t: "The answer is accurate but rambles and dodges the question", stage: "generation", metric: "Answer Relevance",
+        fix: "the generator isn't addressing the query — fix the prompt/instruction" },
+      { t: "The final answer just doesn't match the known-correct one", stage: "answer", metric: "Answer Correctness",
+        fix: "an end-to-end miss — needs ground-truth data to detect; then trace back to stage 1 or 2" }
+    ];
+    var btns = [];
+    symptoms.forEach(function (s, i) {
+      var b = document.createElement("button");
+      b.className = "btn ghost"; b.textContent = s.t;
+      b.addEventListener("click", function () {
+        btns.forEach(function (x) { x.className = "btn ghost"; });
+        b.className = "btn";
+        Object.keys(stages).forEach(function (k) { stages[k].classList.toggle("lit", k === s.stage); });
+        var stageName = s.stage === "answer" ? "end-to-end" : s.stage;
+        diag.innerHTML = "Caught by <strong>" + s.metric + "</strong> &nbsp;·&nbsp; the bug lives in <strong>" +
+          stageName + "</strong>. &nbsp;Likely fix: " + s.fix + ".";
+      });
+      btns.push(b); box.appendChild(b);
+    });
+    diag.innerHTML = "Pick a symptom above — notice that a single “quality” score would flag <em>all</em> of these identically, telling you nothing about what to fix.";
+  })();
+
+  /* ---------- Length-control dry run (live logistic regression) ---------- */
+  (function () {
+    var table = $("dry-table"); if (!table) return;
+    // d = Δlength in units of 100 tokens; y = judge preferred our model (1) or not (0)
+    var data = [
+      { d: -1.5, y: 0 }, { d: -1.0, y: 0 }, { d: -0.5, y: 0 }, { d: -0.2, y: 1 },
+      { d: 0.0, y: 1 },  { d: 0.1, y: 0 },  { d: 0.5, y: 1 },  { d: 0.8, y: 1 },
+      { d: 1.0, y: 1 },  { d: 1.2, y: 0 },  { d: 1.5, y: 1 },  { d: 2.0, y: 1 },
+      { d: 2.5, y: 1 },  { d: 3.0, y: 1 }
+    ];
+    var wins = data.reduce(function (s, r) { return s + r.y; }, 0);
+    var rawRate = Math.round(wins / data.length * 100);
+    var sig = function (z) { return 1 / (1 + Math.exp(-z)); };
+
+    function drawTable(theta) {
+      var rows = "<tr><th>#</th><th>Δlength (tokens)</th><th>judge picked us?</th>" +
+        (theta ? "<th>model's P(win)</th>" : "") + "</tr>";
+      data.forEach(function (r, i) {
+        var pred = theta ? '<td>' + Math.round(sig(theta[0] + theta[1] * r.d) * 100) + '%</td>' : '';
+        rows += '<tr><td>' + (i + 1) + '</td><td>' + (r.d > 0 ? "+" : "") + Math.round(r.d * 100) + '</td>' +
+          '<td class="' + (r.y ? "win" : "loss") + '">' + (r.y ? "✓ yes" : "✗ no") + '</td>' + pred + '</tr>';
+      });
+      table.innerHTML = rows;
+    }
+
+    var coefs = $("dry-coefs"), result = $("dry-result"), timer = null;
+    function reset() {
+      if (timer) clearInterval(timer);
+      drawTable(null);
+      coefs.innerHTML = "";
+      result.style.display = "none";
+    }
+    function run() {
+      if (timer) clearInterval(timer);
+      result.style.display = "none";
+      var t0 = 0, t1 = 0, lr = 0.6, step = 0, n = data.length;
+      timer = setInterval(function () {
+        for (var k = 0; k < 50; k++) { // 50 gradient steps per frame
+          var g0 = 0, g1 = 0;
+          for (var i = 0; i < n; i++) {
+            var p = sig(t0 + t1 * data[i].d), e = p - data[i].y;
+            g0 += e; g1 += e * data[i].d;
+          }
+          t0 -= lr * g0 / n; t1 -= lr * g1 / n; step++;
+        }
+        coefs.innerHTML =
+          'iteration <b>' + step + '</b> &nbsp;·&nbsp; intercept θ₀ = <b>' + t0.toFixed(2) + '</b>' +
+          ' &nbsp;·&nbsp; length coef θ₁ = <b>' + t1.toFixed(2) + '</b>';
+        drawTable([t0, t1]);
+        if (step >= 3000) {
+          clearInterval(timer);
+          var lc = Math.round(sig(t0) * 100);
+          result.style.display = "";
+          result.innerHTML =
+            "Raw win-rate = <strong>" + rawRate + "%</strong> (" + wins + "/14). " +
+            "The fit found a <strong>positive</strong> length coefficient (θ₁ = " + t1.toFixed(2) +
+            ") — longer answers really do win more. " +
+            "Now set <strong>Δlength = 0</strong>: predicted win-rate = sigmoid(θ₀) = sigmoid(" + t0.toFixed(2) +
+            ") ≈ <strong>" + lc + "%</strong>. " +
+            "Controlling for length collapses the " + rawRate + "% edge to roughly a coin flip — it was mostly padding.";
+        }
+      }, 60);
+    }
+    $("dry-run").addEventListener("click", run);
+    $("dry-reset").addEventListener("click", reset);
+    reset();
+  })();
+
+  /* ---------- Pairwise pipeline ---------- */
+  (function () {
+    var q = $("pipe-q"); if (!q) return;
+    q.textContent = "“How do I reset my password?”";
+    $("pipe-a1").textContent = "Go to settings, then security, then reset password.";
+    $("pipe-a2").textContent = "Click “Forgot password” on the login page and follow the email link — takes about a minute.";
+
+    $("pipe-judge1").addEventListener("click", function () {
+      var box = $("pipe-orders"); box.innerHTML = "";
+      var rows = [
+        ['Order 1 — v2 shown first', 'judge picks v2'],
+        ['Order 2 — v1 shown first', 'judge picks v2']
+      ];
+      rows.forEach(function (r, i) {
+        var el = document.createElement("div"); el.className = "pipe-order";
+        el.innerHTML = '<span class="badge">' + r[0] + '</span> → <span class="pick">' + r[1] + '</span>';
+        box.appendChild(el);
+        setTimeout(function () { el.classList.add("show"); }, 350 * (i + 1));
+      });
+      var v = $("pipe-v1verdict");
+      setTimeout(function () {
+        v.style.display = "";
+        v.innerHTML = "Both orders agree → <strong>clean win for Prompt v2.</strong> " +
+          "(If the two orders had <em>disagreed</em>, we'd score it a tie — that would've been position bias, not real quality.)";
+      }, 900);
+    });
+
+    // Step 2 — fixed batch of 20 outcomes: 12 v2, 6 v1, 2 ties
+    var batch = ['v2','v2','v1','v2','tie','v2','v1','v2','v2','v1','v2','v1','v2','tie','v2','v1','v2','v2','v1','v2'];
+    var stream = $("pipe-stream"), wr = $("pipe-wr"), wrbar = $("pipe-wrbar"), dec = $("pipe-decision");
+    var timers = [];
+    function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+    function reset() {
+      clearTimers(); stream.innerHTML = ""; wr.textContent = "—"; wrbar.style.width = "0"; dec.textContent = "";
+    }
+    $("pipe-reset").addEventListener("click", reset);
+    $("pipe-batch").addEventListener("click", function () {
+      reset();
+      var v2 = 0, v1 = 0, tie = 0;
+      batch.forEach(function (o, i) {
+        timers.push(setTimeout(function () {
+          var c = document.createElement("div");
+          c.className = "vote-chip " + o;
+          c.textContent = o === "tie" ? "=" : (o === "v2" ? "2" : "1");
+          stream.appendChild(c);
+          if (o === "v2") v2++; else if (o === "v1") v1++; else tie++;
+          var decisive = v2 + v1, rate = decisive ? Math.round(v2 / decisive * 100) : 0;
+          wr.textContent = rate + "%"; wrbar.style.width = rate + "%";
+          if (i === batch.length - 1) {
+            dec.innerHTML = "Final: <strong>v2 won " + v2 + ", v1 won " + v1 + ", " + tie + " ties</strong> → " +
+              "v2 wins <strong>" + rate + "%</strong> of decisive comparisons. Clear enough → <strong>ship v2.</strong>";
+          }
+        }, 160 * (i + 1)));
+      });
+    });
+  })();
+
+  /* ---------- Concept drawer ---------- */
+  (function () {
+    var drawer = $("concept-drawer"), overlay = $("concept-overlay");
+    if (!drawer) return;
+    function open() { drawer.classList.add("show"); overlay.classList.add("show"); }
+    function close() { drawer.classList.remove("show"); overlay.classList.remove("show"); }
+    $("concept-fab").addEventListener("click", open);
+    $("drawer-close").addEventListener("click", close);
+    overlay.addEventListener("click", close);
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") close(); });
+
+    document.querySelectorAll(".cterm").forEach(function (t) {
+      t.addEventListener("click", function () {
+        var id = "c-" + t.getAttribute("data-c");
+        var target = $(id);
+        if (!target) { open(); return; }
+        open();
+        setTimeout(function () {
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+          target.classList.remove("flash");
+          void target.offsetWidth; // restart animation
+          target.classList.add("flash");
+        }, 260);
+      });
+    });
+  })();
+})();
+</script>
+</body>
+</html>
