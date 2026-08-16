@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LLM-as-a-Judge — Gu et al. (2024) — 30 min</title>
+<title>LLM-as-a-Judge — 15 min</title>
 <style>
   :root {
     --bg: #faf9f6;
@@ -39,84 +39,66 @@
   #stage { position: absolute; inset: 0; display: grid; place-items: center; }
   .slide {
     display: none; width: min(100vw, calc(100vh * 16 / 9)); aspect-ratio: 16 / 9;
-    padding: 4.2% 5.5%; position: relative; container-type: inline-size;
+    padding: 4.6% 5.8%; position: relative; container-type: inline-size;
   }
   .slide.active { display: flex; flex-direction: column; }
   .slide > * { flex: none; }
 
-  /* type scales with slide width so it projects correctly at any size */
   .kicker { font-family: var(--sans); font-size: 1.5cqw; font-weight: 700; letter-spacing: .16em;
-    text-transform: uppercase; color: var(--accent); margin-bottom: 1.6cqw; }
-  h1 { font-size: 5.4cqw; line-height: 1.08; margin: 0 0 2cqw; font-weight: 600; letter-spacing: -.01em; }
-  h2 { font-size: 3.9cqw; line-height: 1.14; margin: 0 0 2.4cqw; font-weight: 600; letter-spacing: -.005em; }
-  h3 { font-size: 2.4cqw; margin: 0 0 1cqw; font-weight: 600; }
-  p, li { font-size: 2.05cqw; line-height: 1.5; color: var(--ink-soft); margin: 0 0 1.4cqw; }
+    text-transform: uppercase; color: var(--accent); margin-bottom: 1.8cqw; }
+  h1 { font-size: 5.6cqw; line-height: 1.08; margin: 0 0 2.2cqw; font-weight: 600; letter-spacing: -.01em; }
+  h2 { font-size: 4.2cqw; line-height: 1.13; margin: 0 0 2.6cqw; font-weight: 600; letter-spacing: -.005em; }
+  h3 { font-size: 2.5cqw; margin: 0 0 1cqw; font-weight: 600; }
+  p, li { font-size: 2.2cqw; line-height: 1.5; color: var(--ink-soft); margin: 0 0 1.5cqw; }
   strong { color: var(--ink); font-weight: 600; }
   em { color: var(--ink); }
-  ul { margin: 0 0 1.4cqw; padding-left: 2.6cqw; }
-  li { margin-bottom: 1.1cqw; }
+  ul { margin: 0 0 1.5cqw; padding-left: 2.8cqw; }
+  li { margin-bottom: 1.3cqw; }
   li::marker { color: var(--accent); }
-  .lede { font-size: 2.5cqw; line-height: 1.45; color: var(--ink-soft); }
-  .small { font-size: 1.7cqw; line-height: 1.45; color: var(--ink-faint); }
-  .mono { font-family: var(--mono); }
-  a { color: var(--accent); }
+  .lede { font-size: 2.7cqw; line-height: 1.42; color: var(--ink-soft); }
+  .small { font-size: 1.75cqw; line-height: 1.45; color: var(--ink-faint); }
 
-  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 3cqw; flex: 1 1 auto; min-height: 0; }
-  .cols.c3 { grid-template-columns: repeat(3, 1fr); gap: 2.2cqw; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 3.2cqw; }
+  .cols.c3 { grid-template-columns: repeat(3, 1fr); gap: 2.4cqw; }
   .card { background: var(--surface); border: 1px solid var(--line); border-radius: 1cqw;
-    padding: 2cqw 2.2cqw; font-family: var(--sans); }
-  .card h4 { font-family: var(--font); font-size: 2.1cqw; margin: 0 0 .8cqw; font-weight: 600; }
-  .card p, .card li { font-size: 1.6cqw; line-height: 1.45; margin-bottom: .7cqw; }
+    padding: 2.1cqw 2.3cqw; font-family: var(--sans); }
+  .card h4 { font-family: var(--font); font-size: 2.2cqw; margin: 0 0 .9cqw; font-weight: 600; }
+  .card p, .card li { font-size: 1.7cqw; line-height: 1.45; margin-bottom: .7cqw; }
+  .card p:last-child { margin-bottom: 0; }
   .card.accent { border-left: .35cqw solid var(--accent); }
   .card.win { background: var(--win-bg); border-color: transparent; }
   .card.dud { background: var(--dud-bg); border-color: transparent; }
 
-  .tag { display: inline-block; font-family: var(--sans); font-size: 1.2cqw; font-weight: 700;
+  .tag { display: inline-block; font-family: var(--sans); font-size: 1.25cqw; font-weight: 700;
     letter-spacing: .05em; padding: .25cqw 1cqw; border-radius: 2cqw; text-transform: uppercase; }
   .tag.win { background: var(--win-bg); color: var(--win); }
   .tag.dud { background: var(--dud-bg); color: var(--dud); }
   .tag.mixed { background: var(--mixed-bg); color: var(--mixed); }
 
   .callout { background: var(--accent-soft); border-left: .35cqw solid var(--accent);
-    padding: 1.8cqw 2.2cqw; border-radius: 0 .8cqw .8cqw 0; margin: 1cqw 0 1.6cqw; }
-  .callout p { margin: 0; font-size: 2.05cqw; }
+    padding: 1.9cqw 2.3cqw; border-radius: 0 .8cqw .8cqw 0; margin: 1.2cqw 0 0; }
+  .callout p { margin: 0; font-size: 2.15cqw; }
 
-  .big { font-size: 8cqw; line-height: 1; font-weight: 600; color: var(--accent);
-    letter-spacing: -.02em; }
-  .bignum { font-family: var(--sans); font-size: 3.4cqw; font-weight: 700; color: var(--accent);
-    line-height: 1; }
+  .big { font-size: 9cqw; line-height: 1; font-weight: 600; color: var(--accent); letter-spacing: -.02em; }
 
   table { width: 100%; border-collapse: collapse; font-family: var(--sans); }
-  th, td { text-align: left; padding: .9cqw 1.1cqw; font-size: 1.6cqw; border-bottom: 1px solid var(--line);
+  th, td { text-align: left; padding: 1cqw 1.2cqw; font-size: 1.8cqw; border-bottom: 1px solid var(--line);
     color: var(--ink-soft); vertical-align: top; }
-  th { font-size: 1.25cqw; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-faint);
+  th { font-size: 1.3cqw; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-faint);
     font-weight: 700; }
   td strong { color: var(--ink); }
 
-  pre { font-family: var(--mono); font-size: 1.45cqw; line-height: 1.55; background: var(--surface);
-    border: 1px solid var(--line); border-radius: .8cqw; padding: 1.5cqw 1.8cqw; margin: 0 0 1.4cqw;
-    color: var(--ink-soft); overflow: hidden; white-space: pre; }
-  pre b { color: var(--ink); } pre i { color: var(--accent); font-style: normal; }
-
-  .flow { display: flex; align-items: stretch; gap: 1.2cqw; font-family: var(--sans); }
-  .flow .node { flex: 1; background: var(--surface); border: 1px solid var(--line);
-    border-radius: .8cqw; padding: 1.4cqw; text-align: center; }
-  .flow .node b { display: block; font-size: 1.7cqw; color: var(--ink); margin-bottom: .4cqw; }
-  .flow .node span { font-size: 1.4cqw; color: var(--ink-faint); }
-  .flow .arr { display: grid; place-items: center; color: var(--accent); font-size: 2.2cqw; }
-
-  .grid10 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.1cqw 2.4cqw; }
+  .grid10 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.2cqw 2.6cqw; }
   .brow { display: flex; gap: 1.2cqw; align-items: baseline; font-family: var(--sans); }
-  .brow .n { font-size: 1.3cqw; font-weight: 700; color: var(--accent); min-width: 2cqw; }
-  .brow .t { font-size: 1.62cqw; color: var(--ink-soft); line-height: 1.4; }
+  .brow .n { font-size: 1.35cqw; font-weight: 700; color: var(--accent); min-width: 2cqw; }
+  .brow .t { font-size: 1.72cqw; color: var(--ink-soft); line-height: 1.4; }
   .brow .t b { color: var(--ink); }
 
   .spacer { flex: 1 1 auto; min-height: 0; }
-  .src { font-family: var(--sans); font-size: 1.3cqw; color: var(--ink-faint); margin-top: auto; }
+  .src { font-family: var(--sans); font-size: 1.35cqw; color: var(--ink-faint); margin-top: auto; }
 
-  /* chrome */
-  #bar { position: fixed; left: 0; bottom: 0; height: 3px; background: var(--accent);
-    width: 0; transition: width .25s; z-index: 40; }
+  #bar { position: fixed; left: 0; bottom: 0; height: 3px; background: var(--accent); width: 0;
+    transition: width .25s; z-index: 40; }
   #count { position: fixed; right: 1.2rem; bottom: .9rem; font-family: var(--sans); font-size: 12px;
     color: var(--ink-faint); z-index: 40; letter-spacing: .04em; }
   #timer { position: fixed; left: 1.2rem; bottom: .8rem; font-family: var(--mono); font-size: 12px;
@@ -142,391 +124,148 @@
 <div id="stage">
 
 <!-- 1 -->
-<section class="slide" data-notes="<b>0:00 — 1 min.</b> Open with the one-sentence thesis: LLM judges are already load-bearing infrastructure, and this survey is the field's attempt to make them trustworthy. Name your framing question up front and tell the audience you'll return to it at the end: <i>validated against what ground truth?</i>">
-  <div class="kicker">Paper walkthrough · 30 minutes</div>
-  <h1>LLM-as-a-Judge:<br>how do you trust a model<br>that grades models?</h1>
-  <p class="lede">A walkthrough of <strong>Gu et al., “A Survey on LLM-as-a-Judge”</strong> — the field's most-cited synthesis of how to build an evaluator you can actually rely on.</p>
-  <div class="spacer"></div>
-  <p class="src">Jiawei Gu, Xuhui Jiang, Zhichao Shi, Hexiang Tan, Xuehao Zhai, Chengjin Xu, Wei Li, Yinghan Shen, Shengjie Ma, Honghao Liu, Saizhuo Wang, Kun Zhang, Yuanzhuo Wang, Wen Gao, Lionel Ni, Jian Guo · arXiv:2411.15594 · published in <em>The Innovation</em> · project page: awesome-llm-as-a-judge.github.io</p>
+<section class="slide" data-notes="<b>0:00 — 30s.</b> Don't preamble. State the problem and the promise: by the end they'll know whether to trust a judge, and what to do about it. Skip the author list and citation counts entirely — nobody needs them out loud.">
+  <div class="kicker">15 minutes</div>
+  <h1>How do you trust a model<br>that grades models?</h1>
+  <p class="lede">LLM-as-a-judge is already how most teams evaluate AI output. Here's what it gets right, the ways it quietly fails, and the smallest set of habits that make it defensible.</p>
 </section>
 
 <!-- 2 -->
-<section class="slide" data-notes="<b>1:00 — 1 min.</b> Signpost the four acts so people can place every later slide. Say explicitly: acts 2 and 3 are the substance; act 1 is 4 minutes of setup. If you're running long, act 4 (applications) is what you cut.">
-  <div class="kicker">Roadmap</div>
-  <h2>Four acts</h2>
-  <div class="cols">
-    <div>
-      <div class="card accent" style="margin-bottom:1.6cqw">
-        <h4>1 · Why this problem exists</h4>
-        <p>Reference metrics broke. Human eval doesn't scale. ~4 min</p>
-      </div>
-      <div class="card accent">
-        <h4>2 · The design space</h4>
-        <p>Output format, model choice, post-processing, what you point it at. ~8 min</p>
-      </div>
-    </div>
-    <div>
-      <div class="card accent" style="margin-bottom:1.6cqw">
-        <h4>3 · Reliability — the actual contribution</h4>
-        <p>Three levers to improve judges; ten biases to defend against; how to grade the grader. ~12 min</p>
-      </div>
-      <div class="card accent">
-        <h4>4 · Where it's going, and what I'd push back on</h4>
-        <p>Reasoning judges, open problems, honest limits. ~5 min</p>
-      </div>
-    </div>
+<section class="slide" data-notes="<b>0:30 — 2 min.</b> The core difficulty, once, clearly. Use a concrete example from your own work if you have one: two summaries, both fine, no shared wording. Everything after this is a response to this slide, so don't rush it.">
+  <div class="kicker">The problem</div>
+  <h2>There is no correct string</h2>
+  <p class="lede">Classification has a label. Translation has a reference. But <em>“is this a good answer?”</em> has a whole space of acceptable outputs — most of which share almost no words with each other.</p>
+  <div class="cols c3" style="margin-top:1.8cqw">
+    <div class="card"><h4>Match a reference</h4><p>BLEU, ROUGE — cheap and objective.</p><p><span class="tag dud">breaks</span> A good paraphrase scores low. A fluent, wrong answer that reuses reference words scores high.</p></div>
+    <div class="card"><h4>Ask humans</h4><p>The gold standard — it defines quality.</p><p><span class="tag dud">breaks</span> Slow, costly, and two humans only agree ~80% of the time.</p></div>
+    <div class="card"><h4>Ask a model</h4><p>Scales, cheap, and explains itself.</p><p><span class="tag mixed">the catch</span> It inherits biases you have to actively fight.</p></div>
   </div>
 </section>
 
 <!-- 3 -->
-<section class="slide" data-notes="<b>2:00 — 1.5 min.</b> The core difficulty, stated once, clearly. Good place for a concrete example from your own work: two summaries, both defensible, no string match between them. Don't rush this — everything downstream is a response to this slide.">
-  <div class="kicker">Act 1 · The problem</div>
-  <h2>There is no correct string</h2>
-  <p class="lede">Classification has a label. Translation has a reference. But “is this a good answer / summary / explanation?” has <em>a space</em> of acceptable outputs, most of which share almost no words with each other.</p>
-  <div class="cols c3" style="margin-top:1.5cqw">
-    <div class="card"><h4>Match a reference</h4><p>BLEU, ROUGE. Cheap, objective, reproducible.</p><p><span class="tag dud">breaks</span> Paraphrase scores low. Fluent-but-wrong reusing reference words scores high.</p></div>
-    <div class="card"><h4>Ask humans</h4><p>The gold standard, and the definition of quality.</p><p><span class="tag dud">breaks</span> Slow, expensive, and humans only agree with each other ~80% of the time.</p></div>
-    <div class="card"><h4>Ask a model</h4><p>Scales, cheap, fast, gives reasons.</p><p><span class="tag mixed">the catch</span> It inherits a zoo of biases — and you have to prove it works.</p></div>
+<section class="slide" data-notes="<b>2:30 — 2 min.</b> The number that made the field legitimate — and the framing is the whole point: 80% sounds mediocre until you know the human ceiling is also 80%. Then immediately give the limit, so nobody leaves over-trusting it: this is general chat preference, and judges are much weaker on math and reasoning.">
+  <div class="kicker">Why we do this at all</div>
+  <h2>Judges are about as good as your colleagues</h2>
+  <div class="cols" style="align-items:center">
+    <div>
+      <div class="big">&gt;80%</div>
+      <p style="margin-top:1.2cqw">How often a strong LLM judge agrees with human preference — <strong>which is about how often two qualified humans agree with each other.</strong></p>
+    </div>
+    <div>
+      <div class="callout"><p>A judge disagrees with you roughly as often as <em>another expert would</em>. You can't ask an evaluator to beat the ceiling set by the humans defining the target.</p></div>
+      <p style="margin-top:1.5cqw"><strong>The limit, up front:</strong> that figure is general chat preference. On math and multi-step reasoning, judges reliably rubber-stamp confident, wrong answers — exactly where you'd most want a grader.</p>
+    </div>
   </div>
 </section>
 
 <!-- 4 -->
-<section class="slide" data-notes="<b>3:30 — 1.5 min.</b> This is the number that created the field, and the framing is what makes it land: 80% sounds mediocre until you know the human ceiling is also 80%. Say plainly that this result is the license for everything after it — and note the narrowness now, since it's measured on general chat preference, not math.">
-  <div class="kicker">Act 1 · The result that licensed everything</div>
-  <h2>Judges became credible in 2023</h2>
-  <div class="cols" style="align-items:center">
-    <div>
-      <div class="big">&gt;80%</div>
-      <p style="margin-top:1cqw">GPT-4-as-judge agreement with human preference on MT-Bench — <strong>statistically indistinguishable from how often two qualified humans agree with each other.</strong></p>
-      <p class="small">Zheng et al., NeurIPS 2023, arXiv:2306.05685 — ~10,500 citations.</p>
-    </div>
-    <div>
-      <div class="callout"><p>The framing is what matters. An LLM judge disagrees with you about as often as <em>another expert would</em>. You cannot ask an evaluator to beat the ceiling set by the humans defining the target.</p></div>
-      <p><strong>But read the fine print.</strong> That 80% is general chat preference. The same paper reports judges <em>rubber-stamping confident-but-wrong math and reasoning</em> — which is exactly where you'd most want a grader.</p>
-    </div>
-  </div>
+<section class="slide" data-notes="<b>4:30 — 2 min.</b> The most immediately useful slide. If anyone is running a 1-10 judge in production, this is the one they need. Make the clumping concrete: ask the room what fraction of their scores are 7 or 8. Then give the ordering as a rule they can apply today.">
+  <div class="kicker">Choice 1</div>
+  <h2>How you ask sets your noise floor</h2>
+  <table>
+    <tr><th>Ask it this way</th><th>Reliability</th><th>Use when</th></tr>
+    <tr><td><strong>“Is A or B better?”</strong></td><td><span class="tag win">strongest</span></td><td>Comparing two systems, ranking, preference data</td></tr>
+    <tr><td><strong>“Is every claim supported?”</strong> — yes/no</td><td><span class="tag win">strong</span></td><td>One criterion with a definable boundary</td></tr>
+    <tr><td><strong>“Rate this 1&ndash;10”</strong></td><td><span class="tag dud">weakest</span></td><td>Almost never</td></tr>
+  </table>
+  <div class="callout"><p><strong>Why scores fail:</strong> they clump. Ask for 1&ndash;10 and you get 7s and 8s, because the model has no calibrated sense of what a 6 means — and neither do you. Relative comparisons dodge the problem entirely.</p></div>
 </section>
 
 <!-- 5 -->
-<section class="slide" data-notes="<b>5:00 — 1.5 min.</b> Pivot slide: state why this survey exists and why its framing question is the right one for 2025+. Emphasise the shift from 'do judges work' to 'how do I engineer one I can defend'. Mention the scale — 17 authors, ~1,670 citations, now peer-reviewed in The Innovation — to justify spending 30 minutes on it.">
-  <div class="kicker">Act 1 · This paper</div>
-  <h2>The question changed</h2>
-  <div class="cols">
-    <div>
-      <p><strong>2023 asked:</strong> <em>do LLM judges work at all?</em> Answered yes, and the field moved on.</p>
-      <p><strong>Gu et al. ask the engineering question:</strong></p>
-      <div class="callout"><p>“How can <strong>reliable</strong> LLM-as-a-Judge systems be built?”</p></div>
-      <p>Every section of the survey is organised as an answer to that: improve consistency, mitigate bias, adapt to scenarios, then <em>measure whether you succeeded</em>.</p>
-    </div>
-    <div>
-      <table>
-        <tr><th>Why this survey</th><th></th></tr>
-        <tr><td>Citations</td><td><strong>~1,670</strong> — ~2.7× the next LLM-judge survey</td></tr>
-        <tr><td>Status</td><td>Peer-reviewed, <em>The Innovation</em> (Cell Press)</td></tr>
-        <tr><td>Authors</td><td>17, cross-institution</td></tr>
-        <tr><td>Distinctive</td><td>Runs <strong>its own experiments</strong> — unusual for a survey</td></tr>
-        <tr><td>Scope</td><td>Method → improvement → meta-evaluation → applications</td></tr>
-      </table>
-    </div>
+<section class="slide" data-notes="<b>6:30 — 3 min. The centerpiece — give it the time.</b> Everyone in the room knows the first three. Spend your time on the right-hand column. Numbers 5 and 10 are the ones that make people sit up: a fabricated citation raises the score, and your grounding eval may be graded against the model's memory instead of your documents. Pause at the end of this slide before moving on.">
+  <div class="kicker">Choice 2 · the part people skip</div>
+  <h2>Everyone knows three biases. There are ten.</h2>
+  <div class="grid10">
+    <div class="brow"><span class="n">1</span><span class="t"><b>Position</b> — favours whichever answer came first.</span></div>
+    <div class="brow"><span class="n">6</span><span class="t"><b>Sentiment</b> — rewards a confident, upbeat tone.</span></div>
+    <div class="brow"><span class="n">2</span><span class="t"><b>Verbosity</b> — longer wins regardless of quality.</span></div>
+    <div class="brow"><span class="n">7</span><span class="t"><b>Empty reference</b> — misbehaves when the reference is blank.</span></div>
+    <div class="brow"><span class="n">3</span><span class="t"><b>Self-enhancement</b> — prefers its own family's output.</span></div>
+    <div class="brow"><span class="n">8</span><span class="t"><b>Content continuation</b> — prefers text that continues its own phrasing.</span></div>
+    <div class="brow"><span class="n">4</span><span class="t"><b>Diversity</b> — differential treatment across demographic groups.</span></div>
+    <div class="brow"><span class="n">9</span><span class="t"><b>Nested instruction</b> — instructions hidden in the judged text hijack the verdict.</span></div>
+    <div class="brow"><span class="n">5</span><span class="t"><b>Concreteness</b> — numbers and citations raise scores <em>even when fabricated</em>.</span></div>
+    <div class="brow"><span class="n">10</span><span class="t"><b>Familiar knowledge</b> — trusts what it memorised over the context you gave it.</span></div>
   </div>
+  <div class="callout"><p>The first three have standard fixes and are widely applied. <strong>The other seven mostly aren't.</strong> Watch 5 and 10: together they mean a confidently-cited hallucination can outscore a correct, hedged answer.</p></div>
 </section>
 
 <!-- 6 -->
-<section class="slide" data-notes="<b>6:30 — 1 min.</b> Give the audience the mental model for act 2: a judge is four independent design decisions, not one prompt. This slide is the skeleton for the next four. Say: each of these can be got wrong independently, and each has a literature.">
-  <div class="kicker">Act 2 · The design space</div>
-  <h2>A judge is four decisions, not a prompt</h2>
-  <div class="flow" style="margin:1.5cqw 0 2cqw">
-    <div class="node"><b>1 · Output format</b><span>score · yes/no · pairwise · multiple-choice</span></div>
-    <div class="arr">→</div>
-    <div class="node"><b>2 · Model</b><span>frontier general vs fine-tuned specialist</span></div>
-    <div class="arr">→</div>
-    <div class="node"><b>3 · Post-processing</b><span>how you turn text into a number</span></div>
-    <div class="arr">→</div>
-    <div class="node"><b>4 · Target</b><span>models · data · agents · reasoning</span></div>
+<section class="slide" data-notes="<b>9:30 — 2 min.</b> The relief slide after the bias list — these are all cheap. Lead with the panel result because it's the rare case where better is also cheaper, and explain the mechanism in one line: self-preference is per-family, so mixing families cancels it rather than averaging it. Note that swap-and-average and anonymising cost nothing.">
+  <div class="kicker">The fixes</div>
+  <h2>Most of them are cheap</h2>
+  <div class="cols">
+    <div>
+      <div class="card accent" style="margin-bottom:1.4cqw"><h4>Swap and average</h4><p>Run every comparison in both orders. Kills position bias outright. Costs one extra call.</p></div>
+      <div class="card accent"><h4>Hide who wrote what</h4><p>Strip authorship from the input. A judge that can't identify the sibling can't favour it.</p></div>
+    </div>
+    <div>
+      <div class="card accent" style="margin-bottom:1.4cqw"><h4>Rubric + reason first</h4><p>State the criteria and the boundary; make it reason before scoring. Require quoted evidence — it hallucinates support far less when forced to cite.</p></div>
+      <div class="card win"><h4>Use a panel, not a bigger judge</h4><p>Several small judges from <em>different families</em>, pooled, <strong>beat one frontier judge and ran ~7× cheaper.</strong> Self-preference is family-specific, so mixing families cancels it.</p></div>
+    </div>
   </div>
-  <p>The survey's contribution here is <strong>separating these axes</strong>. Most practitioner failures are a wrong choice on one axis being blamed on another — a noisy 1–10 score gets diagnosed as “the judge is weak” when the format was the problem.</p>
 </section>
 
 <!-- 7 -->
-<section class="slide" data-notes="<b>7:30 — 2 min.</b> The single most actionable slide in act 2. Hit the ordering hard: pairwise > binary > multiple-choice > scalar. If someone in your audience is running a 1–10 judge in production, this is the slide they need. The clumping point is concrete: ask them what fraction of their scores are 7 or 8.">
-  <div class="kicker">Act 2 · Decision 1</div>
-  <h2>Output format decides your noise floor</h2>
-  <table>
-    <tr><th>Format</th><th>What it asks</th><th>Reliability</th><th>Use when</th></tr>
-    <tr><td><strong>Pairwise</strong></td><td>“Is A or B better?”</td><td><span class="tag win">strongest</span></td><td>Comparing two systems, ranking, preference data</td></tr>
-    <tr><td><strong>Yes / No</strong></td><td>“Is every claim supported?”</td><td><span class="tag win">strong</span></td><td>A single criterion with a definable boundary</td></tr>
-    <tr><td><strong>Multiple choice</strong></td><td>“Which category of failure?”</td><td><span class="tag mixed">ok</span></td><td>Error taxonomies, routing</td></tr>
-    <tr><td><strong>Numeric score</strong></td><td>“Rate 1–10”</td><td><span class="tag dud">weakest</span></td><td>Only when you need a single item scored in isolation</td></tr>
-  </table>
-  <div class="callout" style="margin-top:1.4cqw"><p><strong>Why scalar scores fail:</strong> they clump. Ask for 1–10 and you get 7s and 8s, because the model has no calibrated notion of what a 6 means and neither do you. Relative judgments dodge the problem entirely — which is why Chatbot Arena is pairwise, and why Elo/Bradley-Terry exists to turn noisy pairwise votes into a stable ranking.</p></div>
-</section>
-
-<!-- 8 -->
-<section class="slide" data-notes="<b>9:30 — 1.5 min.</b> Give the honest verdict rather than the diplomatic one: fine-tuned open judges are excellent in-domain and degrade out-of-distribution. Prometheus 2 is the strongest example of the open case. The deployment argument matters for a technical audience — a pinned local judge doesn't silently change under you.">
-  <div class="kicker">Act 2 · Decision 2</div>
-  <h2>General frontier model, or fine-tuned specialist?</h2>
-  <div class="cols">
-    <div class="card"><h4>General frontier LLM</h4>
-      <p><strong>For:</strong> best out-of-the-box agreement; generalises to criteria you invent tomorrow; no training pipeline.</p>
-      <p><strong>Against:</strong> cost at scale; closed and unauditable; <em>changes under you without warning</em>; can't be run in a sealed environment.</p>
-    </div>
-    <div class="card"><h4>Fine-tuned open judge</h4>
-      <p><strong>For:</strong> cheap, reproducible, pinnable, private. Prometheus 2 matches frontier agreement on <em>custom rubrics</em>; JudgeLM bakes in de-biasing like swap augmentation.</p>
-      <p><strong>Against:</strong> the recurring finding — <span class="tag mixed">generalises worse</span> outside its training distribution.</p>
-    </div>
-  </div>
-  <div class="callout"><p><strong>Decision rule:</strong> stable narrow criteria at high volume → fine-tuned specialist. Broad or evolving criteria → frontier model. Either way, <em>pin the version and record it with every score</em>, or your metric drifts for reasons that have nothing to do with your system.</p></div>
-</section>
-
-<!-- 9 -->
-<section class="slide" data-notes="<b>11:00 — 1.5 min.</b> This is the most technical slide of act 2 and the one where you should flag an aged-out recommendation. Logit normalisation was G-Eval's clever fix for clumping — but logprobs aren't exposed on much of the current frontier (Anthropic's API; OpenAI's reasoning models), so pairwise has effectively replaced it. Constrained decoding, by contrast, has only gotten better and is now standard API infrastructure.">
-  <div class="kicker">Act 2 · Decision 3</div>
-  <h2>Text → number: four post-processing routes</h2>
+<section class="slide" data-notes="<b>11:30 — 2 min.</b> The one thing you cannot skip. 'Calibrate against humans' is advice everyone repeats and nobody specifies, so give the numbers. The insight to land: measure human-human agreement FIRST, because it's the ceiling — and if your own people can't agree, your rubric is broken, not your judge.">
+  <div class="kicker">The non-negotiable</div>
+  <h2>You can't trust a judge you haven't audited</h2>
   <div class="cols">
     <div>
-      <div class="card" style="margin-bottom:1.2cqw"><h4>Extract specific tokens</h4><p>Pull the verdict token out of free-form output. Simple; brittle to format drift.</p></div>
-      <div class="card"><h4>Constrained decoding</h4><p>Force the output into a schema or enum at decode time. <span class="tag win">now standard</span> — this is structured outputs / JSON schema in every major API.</p></div>
+      <div class="card accent"><h4>The protocol</h4>
+        <p><strong>1.</strong> Hand-label 50 examples yourself.</p>
+        <p><strong>2.</strong> Have two people label the same 30 independently. Measure <em>human&ndash;human</em> agreement first — <strong>that's your ceiling.</strong></p>
+        <p><strong>3.</strong> Humans agree less than ~70%? <strong>Stop — the rubric is broken, not the judge.</strong></p>
+        <p><strong>4.</strong> Now compare judge to human, and read every disagreement.</p>
+      </div>
     </div>
     <div>
-      <div class="card" style="margin-bottom:1.2cqw"><h4>Normalise output logits</h4><p>Weight the score by token probability for finer granularity — G-Eval's fix for clumping.<br><span class="tag dud">aged out</span> Logprobs aren't exposed across much of the current frontier. Use pairwise instead.</p></div>
-      <div class="card"><h4>Select sentences</h4><p>Have the judge cite the spans it relied on. <span class="tag win">underrated</span> — quoting evidence makes verdicts auditable and cuts hallucinated support.</p></div>
-    </div>
-  </div>
-  <p class="src">This is a survey published in 2024 describing 2024 tooling; two of these four have moved substantially since. Flagged rather than repeated.</p>
-</section>
-
-<!-- 10 -->
-<section class="slide" data-notes="<b>12:30 — 1.5 min.</b> Underrated section of the paper. The point that lands: 'LLM-as-a-judge' is four different jobs with different failure costs. Judging training data is the highest-leverage and least-discussed — a biased judge there poisons the model itself rather than just misreporting a number.">
-  <div class="kicker">Act 2 · Decision 4</div>
-  <h2>Four things you can point a judge at</h2>
-  <div class="cols c3">
-    <div class="card"><h4>Models</h4><p>The familiar case — leaderboards, A/B, regression gates. Failure cost: <em>a wrong number in a report.</em></p></div>
-    <div class="card"><h4>Data</h4><p>Filtering and labelling training corpora; generating preference pairs for RLHF. Failure cost: <em>you bake the judge's bias into the model.</em></p></div>
-    <div class="card"><h4>Agents</h4><p>Grading multi-step trajectories, not one answer — was the tool call right, did it recover from error?</p></div>
-  </div>
-  <div class="callout" style="margin-top:1.6cqw"><p><strong>Fourth: reasoning.</strong> Judging chains of thought, not just conclusions. This is the hardest case and the newest — a plausible chain reaching the right answer by luck should not score well, and surface-level judges reliably fall for it.</p></div>
-  <p class="small">A reward model is the “data” case wearing a different hat: same skill, used as a training signal rather than a report. Which is why RewardBench matters to anyone building judges.</p>
-</section>
-
-<!-- 11 -->
-<section class="slide" data-notes="<b>14:00 — 1 min.</b> Act 3 opens. This is the survey's actual contribution — say so. Three levers, ordered by cost: prompt is free, aggregation costs inference, fine-tuning costs a pipeline. Advise the audience to exhaust them in that order.">
-  <div class="kicker">Act 3 · The contribution</div>
-  <h2>Three levers for reliability</h2>
-  <div class="flow" style="margin:2cqw 0">
-    <div class="node"><b>Prompt</b><span>how you ask</span></div>
-    <div class="arr">·</div>
-    <div class="node"><b>Model ability</b><span>fine-tune, iterate on feedback</span></div>
-    <div class="arr">·</div>
-    <div class="node"><b>Result aggregation</b><span>combine or optimise outputs</span></div>
-  </div>
-  <p class="lede">Exhaust them in <strong>cost order</strong>: prompt design is free, aggregation costs extra inference, fine-tuning costs a data pipeline and a maintenance burden. Most teams reach for the expensive lever before the free one is even tuned.</p>
-</section>
-
-<!-- 12 -->
-<section class="slide" data-notes="<b>15:00 — 2 min.</b> The most immediately useful slide for practitioners. Two sub-levers: help it understand the task, and constrain the output. Stress 'one criterion per call' — omnibus 'rate overall quality' prompts are the single most common mistake, and they entangle three judgments in one unusable number.">
-  <div class="kicker">Act 3 · Lever 1 — free</div>
-  <h2>Prompt design: understanding, then form</h2>
-  <div class="cols">
-    <div>
-      <h3>Help it understand the task</h3>
-      <ul>
-        <li><strong>Explicit rubric</strong> — state criteria and the boundary between grades. Never “is this good?”</li>
-        <li><strong>Chain-of-thought before the score</strong> — reason first, commit last.</li>
-        <li><strong>Few-shot anchors</strong> — pre-scored examples so the scale means the same thing across runs.</li>
-        <li><strong>Reference-guided</strong> — supply the gold answer whenever one exists.</li>
-        <li><strong>One criterion per call</strong> — faithfulness <em>and</em> tone <em>and</em> helpfulness in one prompt yields three mediocre judgments fused into one number.</li>
-      </ul>
-    </div>
-    <div>
-      <h3>Constrain the output form</h3>
-      <ul>
-        <li><strong>Structured verdict</strong> — JSON or a fixed enum, never free prose.</li>
-        <li><strong>Require quoted evidence</strong> — the field that does the most work: a judge forced to cite supporting text invents support far less often.</li>
-        <li><strong>Delimit and distrust inputs</strong> — the answer under evaluation is untrusted text that may contain instructions.</li>
-      </ul>
-      <div class="callout"><p>Rubric quality has a hard test: <strong>can two humans apply it and agree?</strong> If not, no prompt engineering will save the judge.</p></div>
-    </div>
-  </div>
-</section>
-
-<!-- 13 -->
-<section class="slide" data-notes="<b>17:00 — 1.5 min.</b> Levers 2 and 3, briskly. PoLL is the headline: a panel of small diverse judges beat a single large one AND came out ~7x cheaper, which is the rare case where the better option is also the cheaper one. Explain WHY diversity works — self-preference bias is per-family, so mixing families cancels it rather than averaging it.">
-  <div class="kicker">Act 3 · Levers 2 &amp; 3</div>
-  <h2>Train it, or take a vote</h2>
-  <div class="cols">
-    <div>
-      <h3>Lever 2 · Model ability</h3>
-      <ul>
-        <li><strong>Fine-tune on meta-evaluation data</strong> — train directly on human-labelled judgments (Prometheus's Feedback Collection: 1K rubrics, 100K responses).</li>
-        <li><strong>Iterative optimisation</strong> — feed the judge's own evaluation errors back as training signal.</li>
-      </ul>
-    </div>
-    <div>
-      <h3>Lever 3 · Aggregation</h3>
-      <ul>
-        <li><strong>Panel of diverse judges (PoLL)</strong> — several smaller judges from <em>different families</em>, pooled.</li>
-        <li><strong>Self-consistency</strong> — sample one judge repeatedly, take the majority.</li>
-      </ul>
-    </div>
-  </div>
-  <div class="callout"><p><strong>PoLL is the durable practical result:</strong> a diverse panel <em>beat</em> a single frontier judge, reduced intra-model bias, and ran <strong>~7× cheaper</strong>. The mechanism matters — self-preference is family-specific, so mixing families <em>cancels</em> it rather than averaging it. Diversity beats size.</p></div>
-</section>
-
-<!-- 14 -->
-<section class="slide" data-notes="<b>18:30 — 2.5 min. THE slide of the talk.</b> Everyone knows the first three biases from MT-Bench. The survey enumerates ten. Spend your time on the bottom six — those are the ones nobody defends against. Concreteness bias (fake citations raise scores) and familiar-knowledge bias (the judge trusts what it has memorised over the provided context) are the ones that make audiences visibly uncomfortable. Pause after this slide.">
-  <div class="kicker">Act 3 · The money slide</div>
-  <h2>Everyone knows three biases. There are ten.</h2>
-  <div class="grid10">
-    <div class="brow"><span class="n">1</span><span class="t"><b>Position</b> — favours whichever answer came first. <span class="tag win">fix: swap &amp; average</span></span></div>
-    <div class="brow"><span class="n">6</span><span class="t"><b>Sentiment</b> — rewards a confident or upbeat tone.</span></div>
-    <div class="brow"><span class="n">2</span><span class="t"><b>Length / verbosity</b> — longer wins regardless of quality. <span class="tag win">fix: length control</span></span></div>
-    <div class="brow"><span class="n">7</span><span class="t"><b>Empty reference</b> — misbehaves when the reference is missing or blank.</span></div>
-    <div class="brow"><span class="n">3</span><span class="t"><b>Self-enhancement</b> — prefers its own family's output. <span class="tag win">fix: anonymise + panel</span></span></div>
-    <div class="brow"><span class="n">8</span><span class="t"><b>Content continuation</b> — prefers text that continues its own phrasing.</span></div>
-    <div class="brow"><span class="n">4</span><span class="t"><b>Diversity</b> — differential treatment across demographic groups.</span></div>
-    <div class="brow"><span class="n">9</span><span class="t"><b>Nested instruction</b> — instructions inside the judged content hijack the verdict.</span></div>
-    <div class="brow"><span class="n">5</span><span class="t"><b>Concreteness</b> — specific numbers and citations raise scores <em>even when fabricated</em>.</span></div>
-    <div class="brow"><span class="n">10</span><span class="t"><b>Familiar knowledge</b> — trusts what it memorised over the context you supplied.</span></div>
-  </div>
-  <div class="callout" style="margin-top:1.4cqw"><p>The first three have known fixes and are widely applied. <strong>The other seven mostly don't, and mostly aren't.</strong> Numbers 5 and 10 should worry you most: they mean a confidently-cited hallucination can outscore a correct hedged answer, and your grounding eval can be quietly graded against the model's memory rather than your documents.</p></div>
-</section>
-
-<!-- 15 -->
-<section class="slide" data-notes="<b>21:00 — 1.5 min.</b> Bias is accidental; adversarial robustness is deliberate. The framing that lands: the moment a judge gates anything valuable, it becomes an attack surface, and nested-instruction bias is a prompt-injection vector aimed at your evaluator. If you use judges in RLHF, an attacker who games the judge steers the model.">
-  <div class="kicker">Act 3 · Robustness</div>
-  <h2>A judge that gates anything is an attack surface</h2>
-  <div class="cols">
-    <div>
-      <p><strong>Bias is accidental. Attack is deliberate.</strong> The survey treats adversarial robustness as its own axis, and it becomes urgent the moment a judge decides something valuable — a leaderboard rank, a deploy, a reward signal.</p>
-      <ul>
-        <li><strong>Prompt injection via the judged text</strong> — nested-instruction bias is the vulnerability; the content under evaluation talks to the evaluator.</li>
-        <li><strong>Optimising against the judge</strong> — padding, citation-stuffing, confident phrasing: gaming what correlates with score instead of what the score means.</li>
-        <li><strong>Reward hacking</strong> — the RLHF case, where gaming the judge steers the trained model itself.</li>
-      </ul>
-    </div>
-    <div>
-      <div class="callout"><p>Goodhart's law applies with unusual force: <em>the moment your judge becomes a target, it stops being a measure.</em> This is why AlpacaEval needed length control — models learned to write more, and the leaderboard rewarded it.</p></div>
-      <p><strong>Minimum defences:</strong> delimit and distrust judged content; instruct the judge to ignore embedded instructions; hold out an eval set you never optimise against; re-audit whenever scores improve suspiciously fast.</p>
-    </div>
-  </div>
-</section>
-
-<!-- 16 -->
-<section class="slide" data-notes="<b>22:30 — 2 min.</b> Close the loop: you cannot trust a judge you haven't audited. Give the concrete protocol with numbers, because 'calibrate against humans' is the field's most-repeated and least-specified advice. The key insight to deliver: measure human-human agreement FIRST — it's the ceiling, and if humans can't agree your rubric is broken, not your judge.">
-  <div class="kicker">Act 3 · Meta-evaluation</div>
-  <h2>Grading the grader</h2>
-  <div class="cols">
-    <div>
-      <p>The survey's closing move is <strong>meta-evaluation</strong>: judge quality is itself an empirical claim requiring evidence. Benchmarks like RewardBench exist for exactly this.</p>
-      <p><strong>Use Cohen's κ, not raw agreement.</strong> Raw agreement is inflated when one class dominates — a judge that says “pass” every time scores 90% on a set that's 90% passes and has learned nothing. κ subtracts chance.</p>
+      <p><strong>Use Cohen's κ, not raw agreement.</strong> Raw agreement lies when one answer dominates: on a set that's 90% “pass”, a judge that always says pass scores 90% and has learned nothing.</p>
       <table>
         <tr><td>κ &lt; 0.4</td><td>don't ship it</td></tr>
-        <tr><td>0.4 – 0.6</td><td>coarse trends only</td></tr>
-        <tr><td>0.6 – 0.8</td><td>solid for production</td></tr>
+        <tr><td>0.4 &ndash; 0.6</td><td>coarse trends only</td></tr>
+        <tr><td>0.6 &ndash; 0.8</td><td>solid for production</td></tr>
         <tr><td>κ &gt; 0.8</td><td>strong</td></tr>
       </table>
     </div>
-    <div>
-      <div class="card accent"><h4>The protocol, with numbers</h4>
-        <p><strong>1.</strong> Hand-label 50–100 items against your rubric.</p>
-        <p><strong>2.</strong> Two people independently label the same 30–50. Measure <em>human–human</em> agreement first — <strong>this is the ceiling.</strong></p>
-        <p><strong>3.</strong> Humans agree &lt; ~70%? <strong>Stop. Your rubric is broken, not your judge.</strong></p>
-        <p><strong>4.</strong> Now measure judge-vs-human κ.</p>
-        <p><strong>5.</strong> Read every disagreement. Each is either a judge failure or a rubric ambiguity — different fixes.</p>
-        <p><strong>6.</strong> Re-calibrate on any change to rubric, model, or model version.</p>
-      </div>
-    </div>
   </div>
 </section>
 
-<!-- 17 -->
-<section class="slide" data-notes="<b>24:30 — 1.5 min.</b> Act 4. This is the survey's most forward-looking section and the bridge to 2026. Two directions in tension: reasoning models make better judges, and judges make better reasoning models (as verifiers in RLVR). Note honestly that this section is the survey's thinnest — it was written as o1-style models were appearing.">
-  <div class="kicker">Act 4 · Where it's going</div>
-  <h2>Reasoning cuts both ways</h2>
-  <div class="cols">
-    <div class="card"><h4>Better reasoners → better judges</h4>
-      <p>Test-time compute helps most exactly where judges were weakest: math, logic, multi-step verification. A judge that actually works the problem is harder to fool with a confident wrong chain.</p>
-      <p class="small">The survey covers this as “o1-like reasoning enhancement” — written as these models were first appearing, so it's the thinnest section.</p>
-    </div>
-    <div class="card"><h4>Judges → better reasoners</h4>
-      <p>Run in reverse, a judge is a <strong>verifier</strong> — the reward signal for reasoning-model training. Where the answer is checkable you prefer a hard verifier; where it isn't, a learned judge is what you have.</p>
-      <p class="small">This is the live 2026 frontier: generative / critique reward models and rubric-based verification.</p>
-    </div>
-  </div>
-  <div class="callout"><p><strong>The trap in both directions:</strong> a judge that gets the right verdict via broken reasoning is <em>worse</em> than one that's transparently wrong — it passes your audit and fails in production. Which is the argument for requiring quoted evidence.</p></div>
-</section>
-
-<!-- 18 -->
-<section class="slide" data-notes="<b>26:00 — 1.5 min.</b> Credibility slide. Show you read the paper critically rather than summarising it. Deliver these as respect, not dismissal — it's the most-cited survey for good reason. The abstract-vs-body gap on the benchmark is a fair, checkable observation; say you couldn't find it named in the body and invite correction.">
-  <div class="kicker">Act 4 · Honest appraisal</div>
-  <h2>What I'd push back on</h2>
-  <div class="cols">
-    <div>
-      <div class="card win" style="margin-bottom:1.2cqw"><h4>Holds up well</h4>
-        <p>The reliability framing is the right question. Separating the design axes is genuinely clarifying. The ten-bias taxonomy is the most complete anywhere. Running its own experiments is rare and welcome.</p>
-      </div>
-      <div class="card dud"><h4>Aged out</h4>
-        <p>Logit normalisation as a recommendation — logprobs aren't broadly exposed anymore. Written before reasoning models were widespread, so the most consequential recent shift gets one short section.</p>
-      </div>
-    </div>
-    <div>
-      <div class="card mixed" style="background:var(--mixed-bg);border-color:transparent"><h4>Unresolved</h4>
-        <p><strong>The abstract promises “a novel benchmark”</strong> for judge reliability; I could not find one named as such in the body — the experiments use existing benchmarks (LLMEval2, EvalBiasBench). If someone knows the intended artifact, I'd like to be corrected.</p>
-        <p><strong>Breadth over depth in places</strong> — the applications section is a wide catalogue; the bias section is where the value is.</p>
-        <p><strong>Taxonomy, not protocol</strong> — it tells you the levers exist, not the sample sizes and thresholds you need on Monday.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- 19 -->
-<section class="slide" data-notes="<b>27:30 — 2 min.</b> The slide people photograph. Six actions, ordered by leverage per unit effort. If you only have time for one sentence: pairwise, panel, and hand-label 50 examples. Then take questions.">
-  <div class="kicker">Act 4 · What to do Monday</div>
-  <h2>Six things, in leverage order</h2>
+<!-- 8 -->
+<section class="slide" data-notes="<b>13:30 — 1.5 min.</b> The slide people photograph. Read them out; don't elaborate much. If you're over time, this is the only slide that matters — jump here.">
+  <div class="kicker">What to do Monday</div>
+  <h2>Five things, in leverage order</h2>
   <div class="cols">
     <div>
       <ul>
-        <li><strong>Hand-label 50 examples.</strong> Nothing substitutes for it. This is where you learn your rubric is ambiguous.</li>
-        <li><strong>Go pairwise or binary.</strong> Delete your 1–10 scale. It clumps and it lies.</li>
-        <li><strong>One criterion per call</strong>, with a written boundary and quoted evidence in the output.</li>
+        <li><strong>Hand-label 50 examples.</strong> Nothing substitutes for it — it's where you find out your rubric is ambiguous.</li>
+        <li><strong>Delete your 1&ndash;10 scale.</strong> Go pairwise, or binary with a written boundary.</li>
+        <li><strong>One criterion per call</strong>, with quoted evidence in the output.</li>
       </ul>
     </div>
     <div>
       <ul>
-        <li><strong>Never let a model family grade itself.</strong> Anonymise authorship; prefer a diverse panel — cheaper <em>and</em> better.</li>
-        <li><strong>Pin the judge version</strong> and store per-item results, not just the aggregate.</li>
-        <li><strong>Know your noise floor.</strong> At n=100 near 80%, ±8 points is noise — compare paired on identical items, and ignore moves inside the interval.</li>
+        <li><strong>Never let a model family grade itself.</strong> Anonymise authorship; prefer a diverse panel.</li>
+        <li><strong>Know your noise floor.</strong> At 100 examples, ±8 points is noise — so ignore small moves, and compare on identical items.</li>
       </ul>
+      <div class="callout"><p>And the question to carry out of the room: <em>validated against what ground truth, and how was it produced?</em></p></div>
     </div>
   </div>
-  <div class="callout"><p><strong>And the question to carry out of the room:</strong> <em>validated against what ground truth, and how was that ground truth produced?</em> Almost every disagreement in this field is really a disagreement about the reference standard, not the technique.</p></div>
 </section>
 
-<!-- 20 -->
-<section class="slide" data-notes="<b>29:30 — Q&amp;A.</b> Likely questions: (1) 'Which judge model should we use?' — whichever isn't the one you're grading; then panel. (2) 'How many examples is enough?' — 100–300, stratified by failure mode, plus a frozen holdout. (3) 'Can we skip human labelling?' — no; you can minimise it to ~50 items, but zero means you have no ground truth and therefore no eval.">
+<!-- 9 -->
+<section class="slide" data-notes="<b>15:00 — Q&amp;A.</b> Likely questions: (1) 'Which judge model?' — whichever isn't the one you're grading; then a panel. (2) 'How many examples?' — 100&ndash;300, grouped by failure mode, plus a holdout you never tune against. (3) 'Can we skip human labelling?' — no. You can get it down to ~50 items, but zero means no ground truth, which means no eval.">
   <div class="kicker">Thank you</div>
   <h1>Questions</h1>
-  <div class="cols" style="margin-top:1cqw">
-    <div>
-      <h3>Primary source</h3>
-      <p class="small"><strong>Gu et al.</strong>, “A Survey on LLM-as-a-Judge,” arXiv:2411.15594 · published in <em>The Innovation</em> · awesome-llm-as-a-judge.github.io</p>
-      <h3>The foundation</h3>
-      <p class="small"><strong>Zheng et al.</strong>, “Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena,” NeurIPS 2023 · arXiv:2306.05685</p>
-    </div>
-    <div>
-      <h3>Also referenced</h3>
-      <p class="small">G-Eval (2303.16634) · Chatbot Arena (2403.04132) · LC-AlpacaEval (2404.04475) · Arena-Hard (2406.11939) · Self-preference (2404.13076) · Prometheus 2 (2405.01535) · PoLL (2404.18796) · RewardBench (2403.13787)</p>
-      <h3>Other surveys</h3>
-      <p class="small">Dawei Li et al., “From Generation to Judgment,” EMNLP 2025 (2411.16594) · Haitao Li et al., “LLMs-as-Judges” (2412.05579)</p>
-    </div>
-  </div>
+  <div class="spacer"></div>
+  <p class="src">Primary source: Gu et al., “A Survey on LLM-as-a-Judge” (arXiv:2411.15594) · foundational result from Zheng et al., MT-Bench &amp; Chatbot Arena (NeurIPS 2023) · panel result from Verga et al., PoLL · full annotated reading path: faisal-fpl.github.io/llm-judge-reading-list</p>
 </section>
 
 </div>
 
 <div id="bar"></div>
 <div id="count"></div>
-<div id="timer">30:00</div>
+<div id="timer">15:00</div>
 <div id="help">← → navigate · <b>N</b> notes · <b>T</b> timer · <b>F</b> fullscreen</div>
 <div id="notes"><h5>Presenter notes</h5><div id="notes-body"></div></div>
 
@@ -548,8 +287,7 @@
   }
   function go(n) { i = Math.max(0, Math.min(slides.length - 1, n)); render(); }
 
-  // 30-minute countdown, starts on first keypress of T
-  var total = 30 * 60, left = total, tick = null, el = document.getElementById("timer");
+  var left = 15 * 60, tick = null, el = document.getElementById("timer");
   function paint() {
     var m = Math.floor(Math.abs(left) / 60), s = Math.abs(left) % 60;
     el.textContent = (left < 0 ? "+" : "") + m + ":" + (s < 10 ? "0" : "") + s;
@@ -574,7 +312,6 @@
     }
   });
 
-  // click / tap to advance; click left third to go back
   document.addEventListener("click", function (e) {
     if (e.target.closest("#notes") || e.target.closest("a")) return;
     go(e.clientX < window.innerWidth / 3 ? i - 1 : i + 1);
